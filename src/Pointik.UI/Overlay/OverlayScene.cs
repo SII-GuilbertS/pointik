@@ -35,6 +35,12 @@ public sealed class OverlayScene
     /// <summary>Identifiant de l'écran qui affiche les bulles du clavier.</summary>
     public string? KeyboardScreenId { get; set; }
 
+    /// <summary>Notification en cours (null s'il n'y en a pas).</summary>
+    public OverlayNotification? Notification { get; set; }
+
+    /// <summary>Écran qui affiche la notification.</summary>
+    public string? NotificationScreenId { get; set; }
+
     /// <summary>Pause totale : aucune frappe affichée, pastille rouge visible.</summary>
     public bool KeyboardPaused { get; set; }
 

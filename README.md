@@ -46,7 +46,7 @@ Si l'icône n'est pas visible, cliquez sur la flèche « ^ » de la zone de noti
 - combinaison déjà prise par une autre application ;
 - **Ctrl + Alt + flèches**, refusé parce que certains pilotes graphiques s'en servent pour faire pivoter l'écran.
 
-Au démarrage, une notification signale tout raccourci que Windows refuse.
+Au démarrage, une notification signale tout raccourci que Windows refuse. Les notifications s'affichent en haut à droite de l'écran, dans l'overlay : elles ne prennent jamais le focus et laissent passer les clics.
 
 Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavier.
 
@@ -177,13 +177,13 @@ Le zoom utilise l'API Magnification de Windows (`MagSetFullscreenTransform`). Il
   - à la fin de session (WM_QUERYENDSESSION) ;
   - en cas d'erreur de l'API, et le zoom est alors désactivé avec une notification.
 - **Arrêt brutal :** quand le processus est tué (Gestionnaire des tâches), Windows annule lui-même la transformation. Vérifié pendant le développement.
-- **Taille des overlays :** la transformation plein écran agrandit aussi les fenêtres de Pointik. L'anneau, le spot et les ondes sont donc dessinés à l'échelle 1/zoom et gardent une taille apparente constante. Les bulles du clavier et la pastille de pause sont replacées dans la zone visible, à taille normale.
+- **Taille des overlays :** la transformation plein écran agrandit aussi les fenêtres de Pointik. L'anneau, le spot et les ondes sont donc dessinés à l'échelle 1/zoom et gardent une taille apparente constante. Les bulles du clavier, la pastille de pause et les notifications sont replacées dans la zone visible, à taille normale.
 
 **Limites :**
 - **Stylet et tactile :** la « transformation d'entrée » (`MagSetInputTransform`) exige le privilège UIAccess, donc un exe signé installé dans `Program Files`. Elle n'est pas utilisée. Les clics au stylet ou au doigt peuvent donc tomber à côté pendant le zoom. La souris n'est pas concernée.
 - **Loupe Windows :** si elle est ouverte, ou si une autre loupe plein écran est déjà active, le zoom de Pointik refuse de démarrer et l'explique dans une notification.
 - **Multi-écrans :** seul l'écran du curseur est zoomé. Le comportement de `MagSetFullscreenTransform` sur un écran secondaire (coordonnées négatives, DPI différent) n'a pas pu être vérifié pendant le développement, faute de second écran.
-- **Fenêtres non compensées :** la fenêtre de réglages et les notifications sont agrandies comme le reste de l'écran.
+- **Fenêtre non compensée :** la fenêtre de réglages est agrandie comme le reste de l'écran.
 - **Précision :** l'API n'accepte que des positions entières. À très fort grossissement, le suivi avance donc par petits sauts d'un pixel source.
 
 ## Compilation

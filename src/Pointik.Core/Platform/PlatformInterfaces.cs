@@ -81,9 +81,6 @@ public interface IOverlayWindowHost
     /// <summary>Rend la fenêtre traversable aux clics, non activable, hors Alt+Tab et au premier plan.</summary>
     void ConfigureOverlay(nint windowHandle);
 
-    /// <summary>Fenêtre flottante non activable mais qui reçoit la souris (aperçu du mode placement).</summary>
-    void ConfigureFloatingTool(nint windowHandle);
-
     /// <summary>Place la fenêtre exactement sur des limites en pixels physiques.</summary>
     void SetBounds(nint windowHandle, ScreenRect bounds);
 

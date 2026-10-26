@@ -168,9 +168,8 @@ public sealed class AppController
     /// <summary>Écrans disponibles.</summary>
     public IReadOnlyList<ScreenInfo> Screens => _platform.Screens.GetScreens();
 
-    /// <summary>Services d'écran et de fenêtres (mode placement, notifications).</summary>
+    /// <summary>Service d'écrans (mode placement).</summary>
     public IScreenService ScreenService => _platform.Screens;
-    public IOverlayWindowHost OverlayHost => _platform.OverlayHost;
 
     // ------------------------------------------------------------------ Mode portable
 
@@ -516,6 +515,12 @@ public sealed class AppController
                 StateChanged?.Invoke();
             }
         }
+        if (scene.Notification is { } note)
+        {
+            _overlays.InvalidateScreen(scene.NotificationScreenId);
+            if (note.IsExpired(now)) scene.Notification = null;
+            else animating = true;
+        }
         // Une dernière image est dessinée après la fin pour effacer proprement la dernière onde.
         _overlays.InvalidateNear(scene.Cursor, scene.CursorEffectsRadius);
         foreach (var origin in clicks.ActiveOrigins)
@@ -525,9 +530,23 @@ public sealed class AppController
 
     // ------------------------------------------------------------------ Divers
 
-    /// <summary>Affiche une notification non intrusive.</summary>
-    public void Notify(string title, string message) =>
-        ToastWindow.Show(title, message, _platform.Screens, _platform.OverlayHost);
+    /// <summary>
+    /// Affiche une notification non intrusive dans l'overlay : sur l'écran zoomé pendant le zoom,
+    /// sinon sur l'écran principal. Elle remplace la précédente.
+    /// </summary>
+    public void Notify(string title, string message)
+    {
+        if (_overlays is null) return;
+        var scene = Scene;
+        _overlays.InvalidateScreen(scene.NotificationScreenId);
+        var screens = _platform.Screens.GetScreens();
+        scene.NotificationScreenId = _zoom.IsEngaged && _zoom.Screen is { } zs
+            ? zs.Id
+            : (screens.FirstOrDefault(s => s.IsPrimary) ?? screens[0]).Id;
+        scene.Notification = new OverlayNotification(title, message, AppClock.Now, TimeSpan.FromSeconds(6));
+        _overlays.InvalidateScreen(scene.NotificationScreenId);
+        _ticker.Ensure();
+    }
 
     /// <summary>Quitte proprement : hooks, raccourcis et zoom sont libérés.</summary>
     public void RequestExit() => _lifetime.Shutdown();

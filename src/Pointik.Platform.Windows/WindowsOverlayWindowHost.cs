@@ -52,17 +52,6 @@ internal sealed class WindowsOverlayWindowHost : IOverlayWindowHost
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
     }
 
-    public void ConfigureFloatingTool(nint windowHandle)
-    {
-        if (windowHandle == 0) return;
-        var ex = (uint)GetWindowLongPtr(windowHandle, GWL_EXSTYLE);
-        ex |= WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST;
-        ex &= ~(WS_EX_APPWINDOW | WS_EX_TRANSPARENT);
-        SetWindowLongPtr(windowHandle, GWL_EXSTYLE, (nint)ex);
-        SetWindowPos(windowHandle, HWND_TOPMOST, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_NOOWNERZORDER);
-    }
-
     public void SetBounds(nint windowHandle, ScreenRect bounds)
     {
         if (windowHandle == 0) return;

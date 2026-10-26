@@ -64,11 +64,14 @@ public sealed class OverlaySurface : Control
         if (_scene.RingVisible && IsNear(_scene.Cursor, _scene.CursorEffectsRadius))
             DrawRing(context, now, compensation);
 
-        if (Screen.Id == _scene.KeyboardScreenId)
+        var showKeyboard = Screen.Id == _scene.KeyboardScreenId;
+        var notification = Screen.Id == _scene.NotificationScreenId ? _scene.Notification : null;
+        if (showKeyboard || notification is not null)
         {
-            // Bulles et pastille : dessinées dans la zone visible du zoom, à taille normale.
+            // Bulles, pastille et notification : dessinées dans la zone visible du zoom, à taille normale.
             using var _ = zoomed ? context.PushTransform(HudTransform()) : default(DrawingContext.PushedState?);
-            DrawKeyboard(context, now);
+            if (showKeyboard) DrawKeyboard(context, now);
+            notification?.Draw(context, LocalWorkArea(), now, belowPauseBadge: showKeyboard && _scene.KeyboardPaused);
         }
     }
 
