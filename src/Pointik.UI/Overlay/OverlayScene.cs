@@ -2,6 +2,7 @@ using Pointik.Core.Effects;
 using Pointik.Core.Geometry;
 using Pointik.Core.Keys;
 using Pointik.Core.Settings;
+using Pointik.Core.Zoom;
 using Pointik.UI.Keyboard;
 
 namespace Pointik.UI.Overlay;
@@ -14,11 +15,19 @@ public sealed class OverlayScene
 {
     private BubbleRenderer? _bubbleRenderer;
 
-    public OverlayScene(AppSettings settings, KeyDisplayEngine keyboard)
+    public OverlayScene(AppSettings settings, KeyDisplayEngine keyboard, ZoomController zoom, bool overlaysMagnified)
     {
         Settings = settings;
         Keyboard = keyboard;
+        Zoom = zoom;
+        OverlaysMagnified = overlaysMagnified;
     }
+
+    /// <summary>État du zoom (pour compenser la taille des effets).</summary>
+    public ZoomController Zoom { get; }
+
+    /// <summary>Le zoom de la plateforme agrandit aussi les fenêtres overlay.</summary>
+    public bool OverlaysMagnified { get; }
 
     /// <summary>Bulles du clavier en cours d'affichage.</summary>
     public KeyDisplayEngine Keyboard { get; }

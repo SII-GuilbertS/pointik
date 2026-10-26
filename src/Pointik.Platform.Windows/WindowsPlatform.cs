@@ -14,7 +14,7 @@ public static class WindowsPlatform
     public static PlatformServices Create(IUiDispatcher ui)
     {
         var thread = s_thread = new Win32MessageThread();
-        var zoom = s_zoom = new PendingZoomService();
+        var zoom = s_zoom = new MagnificationZoomService(thread);
         return new PlatformServices
         {
             InputHook = new WindowsInputHook(thread, ui),
@@ -22,7 +22,7 @@ public static class WindowsPlatform
             Screens = new WindowsScreenService(thread, ui),
             OverlayHost = new WindowsOverlayWindowHost(thread, ui),
             Zoom = zoom,
-            Hotkeys = new PendingHotkeyService(),
+            Hotkeys = new WindowsHotkeyService(thread, ui),
             Autostart = new PendingAutostart(),
             Sound = new WindowsSoundPlayer(),
             DisposeExtra = () =>
@@ -43,24 +43,6 @@ public static class WindowsPlatform
     }
 
     // Implémentations provisoires, remplacées aux étapes suivantes.
-    private sealed class PendingZoomService : IZoomService
-    {
-        public bool OverlaysAreMagnified => true;
-        public bool TryInitialize(out string? error) { error = "Zoom non disponible."; return false; }
-        public bool TrySetTransform(double scale, Core.Geometry.ScreenPoint viewOrigin, out string? error) { error = null; return false; }
-        public void Reset() { }
-        public void Dispose() { }
-    }
-
-    private sealed class PendingHotkeyService : IHotkeyService
-    {
-        public event Action<HotkeyAction>? HotkeyPressed { add { } remove { } }
-        public bool TryRegister(HotkeyAction action, Hotkey hotkey, out string? error) { error = null; return true; }
-        public void Unregister(HotkeyAction action) { }
-        public void UnregisterAll() { }
-        public void Dispose() { }
-    }
-
     private sealed class PendingAutostart : IAutostartService
     {
         public bool IsEnabled => false;

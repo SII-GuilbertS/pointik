@@ -123,8 +123,14 @@ internal sealed class Win32MessageThread : IDisposable
                     PostQuitMessage(0);
                     return 0;
             }
-            if (MessageReceived?.Invoke(msg, wParam, lParam) == true)
-                return 0;
+            // Chaque abonné voit le message ; il est traité si l'un d'eux le revendique.
+            var handled = false;
+            if (MessageReceived is { } handlers)
+            {
+                foreach (var h in handlers.GetInvocationList())
+                    handled |= ((Func<uint, nint, nint, bool>)h)(msg, wParam, lParam);
+            }
+            if (handled) return 0;
         }
         catch
         {

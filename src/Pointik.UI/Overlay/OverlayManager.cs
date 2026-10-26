@@ -2,6 +2,7 @@ using Pointik.Core.Geometry;
 using Pointik.Core.Keys;
 using Pointik.Core.Platform;
 using Pointik.Core.Settings;
+using Pointik.Core.Zoom;
 
 namespace Pointik.UI.Overlay;
 
@@ -12,11 +13,12 @@ public sealed class OverlayManager : IDisposable
     private readonly IOverlayWindowHost _host;
     private readonly List<OverlayWindow> _windows = new();
 
-    public OverlayManager(IScreenService screens, IOverlayWindowHost host, AppSettings settings, KeyDisplayEngine keyboard)
+    public OverlayManager(IScreenService screens, IOverlayWindowHost host, AppSettings settings,
+        KeyDisplayEngine keyboard, ZoomController zoom, bool overlaysMagnified)
     {
         _screens = screens;
         _host = host;
-        Scene = new OverlayScene(settings, keyboard);
+        Scene = new OverlayScene(settings, keyboard, zoom, overlaysMagnified);
         _screens.ScreensChanged += Rebuild;
         _host.StackingMayHaveChanged += BringAllToFront;
     }

@@ -50,8 +50,10 @@ public sealed class OverlaySurface : Control
     {
         var now = AppClock.Now;
         var settings = _scene.Settings;
-        // Compensation du zoom : 1 sans zoom (complétée à l'étape du zoom).
-        const double compensation = 1.0;
+        // Le zoom plein écran agrandit aussi cette fenêtre : les effets autour du curseur sont
+        // dessinés à l'échelle 1/zoom pour garder une taille apparente constante.
+        var zoomed = IsZoomedScreen;
+        var compensation = zoomed ? 1 / _scene.Zoom.Scale : 1.0;
 
         if (_scene.SpotVisible)
             DrawSpot(context, settings.Spot.Radius * compensation, settings.Spot.Dimming);
@@ -63,7 +65,28 @@ public sealed class OverlaySurface : Control
             DrawRing(context, now, compensation);
 
         if (Screen.Id == _scene.KeyboardScreenId)
+        {
+            // Bulles et pastille : dessinées dans la zone visible du zoom, à taille normale.
+            using var _ = zoomed ? context.PushTransform(HudTransform()) : default(DrawingContext.PushedState?);
             DrawKeyboard(context, now);
+        }
+    }
+
+    /// <summary>Cet écran est actuellement agrandi par le zoom (et la fenêtre l'est aussi).</summary>
+    private bool IsZoomedScreen =>
+        _scene.OverlaysMagnified && _scene.Zoom.IsEngaged && _scene.Zoom.Screen?.Id == Screen.Id && _scene.Zoom.Scale > 1.001;
+
+    /// <summary>
+    /// Transformation qui place un élément « fixe à l'écran » dans la vue agrandie :
+    /// point local p (vu sans zoom) → origine de la vue + p / zoom.
+    /// </summary>
+    private Matrix HudTransform()
+    {
+        var zoom = _scene.Zoom;
+        var s = Scaling;
+        var tx = (zoom.ViewOrigin.X - Screen.Bounds.X) / s;
+        var ty = (zoom.ViewOrigin.Y - Screen.Bounds.Y) / s;
+        return Matrix.CreateScale(1 / zoom.Scale, 1 / zoom.Scale) * Matrix.CreateTranslation(tx, ty);
     }
 
     /// <summary>Zone de travail de l'écran (sans barre des tâches) en coordonnées locales.</summary>
