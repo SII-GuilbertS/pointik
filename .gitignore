@@ -1,0 +1,17 @@
+# Sorties de compilation .NET
+bin/
+obj/
+dist/
+
+# Visual Studio / IDE
+.vs/
+*.user
+*.suo
+.idea/
+.vscode/
+
+# Résultats de tests
+TestResults/
+
+# Réglages locaux de l'application (mode portable)
+Pointik.settings.json
