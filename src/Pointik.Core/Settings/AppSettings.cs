@@ -55,12 +55,17 @@ public sealed class RingSettings
     public double Opacity { get; set; } = 0.85;
     /// <summary>L'anneau se resserre légèrement tant qu'un bouton est maintenu.</summary>
     public bool PressEffect { get; set; } = true;
+    /// <summary>L'anneau s'efface quand la souris reste immobile (évite un anneau figé dans une vidéo).</summary>
+    public bool HideWhenIdle { get; set; } = true;
+    /// <summary>Inactivité avant l'effacement, en secondes (1 à 30).</summary>
+    public double IdleSeconds { get; set; } = 3;
 
     internal void Normalize()
     {
         Size = Math.Clamp(Size, MinSize, MaxSize);
         Thickness = Math.Clamp(Thickness, 1, 16);
         Opacity = Math.Clamp(Opacity, 0.1, 1);
+        IdleSeconds = Math.Clamp(IdleSeconds, 1, 30);
     }
 }
 

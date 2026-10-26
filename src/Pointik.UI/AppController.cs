@@ -24,6 +24,7 @@ public sealed class AppController
     private readonly KeyDisplayEngine _keyboard;
     private readonly ZoomController _zoom;
     private readonly DispatcherTimer _saveTimer;
+    private readonly DispatcherTimer _idleTimer;
     private OverlayManager? _overlays;
     private bool _holdZoom;
     private bool _shutDown;
@@ -49,6 +50,13 @@ public sealed class AppController
             _saveTimer.Stop();
             _store.Save(Settings);
         };
+        // Souris immobile : au terme du délai, le fondu de l'anneau est lancé (aucune minuterie sinon).
+        _idleTimer = new DispatcherTimer();
+        _idleTimer.Tick += (_, _) =>
+        {
+            _idleTimer.Stop();
+            _ticker.Ensure();
+        };
     }
 
     public AppSettings Settings { get; private set; }
@@ -64,6 +72,7 @@ public sealed class AppController
         _overlays = new OverlayManager(_platform.Screens, _platform.OverlayHost, Settings, _keyboard, _zoom,
             _platform.Zoom.OverlaysAreMagnified);
         _overlays.Scene.Cursor = _platform.Screens.GetCursorPosition();
+        _overlays.Scene.LastMouseActivity = AppClock.Now;
         _overlays.Scene.KeyboardScreenId = ResolveKeyboardScreen().Id;
         _overlays.Rebuild();
 
@@ -73,6 +82,7 @@ public sealed class AppController
         _platform.Hotkeys.HotkeyPressed += OnHotkey;
         RegisterHotkeys();
         UpdateHooks();
+        NoteMouseActivity(AppClock.Now);
     }
 
     // ------------------------------------------------------------------ État des fonctions
@@ -357,6 +367,8 @@ public sealed class AppController
         if (_overlays is null) return;
         var scene = Scene;
         var now = AppClock.Now;
+        if (e.Kind is MouseEventKind.Move or MouseEventKind.ButtonDown)
+            NoteMouseActivity(now);
         switch (e.Kind)
         {
             case MouseEventKind.Move:
@@ -388,6 +400,21 @@ public sealed class AppController
                 }
                 _ticker.Ensure();
                 break;
+        }
+    }
+
+    /// <summary>Mouvement ou clic : l'anneau réapparaît et le délai d'inactivité repart.</summary>
+    private void NoteMouseActivity(TimeSpan now)
+    {
+        var scene = Scene;
+        var wasHidden = scene.RingIdleVisibility(now) < 1;
+        scene.LastMouseActivity = now;
+        if (wasHidden) _overlays!.InvalidateNear(scene.Cursor, scene.CursorEffectsRadius);
+        if (scene.RingVisible && Settings.Ring.HideWhenIdle)
+        {
+            _idleTimer.Stop();
+            _idleTimer.Interval = TimeSpan.FromSeconds(Settings.Ring.IdleSeconds);
+            _idleTimer.Start();
         }
     }
 
@@ -453,7 +480,7 @@ public sealed class AppController
         if (_overlays is null) return false;
         var scene = Scene;
         var clicks = scene.Clicks;
-        var animating = clicks.IsAnimating(now, scene.RippleDuration);
+        var animating = clicks.IsAnimating(now, scene.RippleDuration) || scene.IsRingFading(now);
         if (_keyboard.Bubbles.Count > 0)
         {
             _overlays.InvalidateScreen(scene.KeyboardScreenId);
@@ -495,6 +522,7 @@ public sealed class AppController
         // Sécurité critique en premier : l'écran ne doit jamais rester zoomé.
         _zoom.ResetNow();
         _ticker.Stop();
+        _idleTimer.Stop();
         if (_saveTimer.IsEnabled && !_tracesDeleted)
         {
             _saveTimer.Stop();

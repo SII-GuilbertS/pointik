@@ -80,6 +80,12 @@
                 <TextBlock Text="{Binding RingOpacity, StringFormat='{}{0:0} %'}" /></StackPanel></Grid>
             <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Effet de pression" />
               <CheckBox Grid.Column="1" IsChecked="{Binding RingPressEffect}" Content="L'anneau se resserre tant qu'un bouton est maintenu" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Souris immobile" />
+              <StackPanel Classes="value">
+                <CheckBox IsChecked="{Binding RingHideWhenIdle}" Content="Effacer l'anneau après" />
+                <Slider Minimum="1" Maximum="30" Value="{Binding RingIdleSeconds}" Width="160" IsEnabled="{Binding RingHideWhenIdle}" />
+                <TextBlock Text="{Binding RingIdleSeconds, StringFormat='{}{0:0} s'}" />
+              </StackPanel></Grid>
 
             <TextBlock Classes="section" Text="Spot (mode projecteur)" />
             <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Afficher le spot" />

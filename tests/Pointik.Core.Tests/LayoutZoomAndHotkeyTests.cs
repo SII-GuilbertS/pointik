@@ -209,3 +209,19 @@ public class LayoutZoomAndHotkeyTests
         public void Dispose() { }
     }
 }
+
+public class IdleFadeTests
+{
+    [Fact]
+    public void Ring_stays_visible_then_fades_after_the_idle_delay()
+    {
+        var delay = TimeSpan.FromSeconds(3);
+        var start = TimeSpan.FromSeconds(10);
+        Assert.Equal(1, Effects.IdleFade.Visibility(start + TimeSpan.FromSeconds(2.9), start, delay));
+        var mid = Effects.IdleFade.Visibility(start + delay + Effects.IdleFade.FadeDuration / 2, start, delay);
+        Assert.InRange(mid, 0.01, 0.99);
+        Assert.True(Effects.IdleFade.IsFading(start + delay + TimeSpan.FromMilliseconds(50), start, delay));
+        Assert.Equal(0, Effects.IdleFade.Visibility(start + TimeSpan.FromSeconds(60), start, delay));
+        Assert.False(Effects.IdleFade.IsFading(start + TimeSpan.FromSeconds(60), start, delay));
+    }
+}

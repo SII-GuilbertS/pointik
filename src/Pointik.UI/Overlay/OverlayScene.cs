@@ -56,6 +56,19 @@ public sealed class OverlayScene
 
     public bool RingVisible => CursorHighlightOn && Settings.Ring.Enabled;
 
+    /// <summary>Dernier mouvement ou clic de la souris (effacement de l'anneau immobile).</summary>
+    public TimeSpan LastMouseActivity { get; set; }
+
+    private TimeSpan IdleDelay => TimeSpan.FromSeconds(Settings.Ring.IdleSeconds);
+
+    /// <summary>Visibilité de l'anneau (1 = visible, 0 = effacé après inactivité).</summary>
+    public double RingIdleVisibility(TimeSpan now) =>
+        Settings.Ring.HideWhenIdle ? IdleFade.Visibility(now, LastMouseActivity, IdleDelay) : 1;
+
+    /// <summary>L'anneau est en train de s'effacer.</summary>
+    public bool IsRingFading(TimeSpan now) =>
+        RingVisible && Settings.Ring.HideWhenIdle && IdleFade.IsFading(now, LastMouseActivity, IdleDelay);
+
     public bool SpotVisible => CursorHighlightOn && Settings.Spot.Enabled;
 
     /// <summary>Durée des ondes de clic.</summary>

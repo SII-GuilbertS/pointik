@@ -84,6 +84,8 @@ public sealed class SettingsViewModel : ObservableObject
     public double RingThickness { get => S.Ring.Thickness; set => Edit(() => S.Ring.Thickness = Math.Round(value, 1)); }
     public double RingOpacity { get => S.Ring.Opacity * 100; set => Edit(() => S.Ring.Opacity = Math.Round(value) / 100); }
     public bool RingPressEffect { get => S.Ring.PressEffect; set => Edit(() => S.Ring.PressEffect = value); }
+    public bool RingHideWhenIdle { get => S.Ring.HideWhenIdle; set => Edit(() => S.Ring.HideWhenIdle = value); }
+    public double RingIdleSeconds { get => S.Ring.IdleSeconds; set => Edit(() => S.Ring.IdleSeconds = Math.Round(value)); }
 
     public bool SpotEnabled { get => S.Spot.Enabled; set => Edit(() => _app.SpotEnabled = value); }
     public double SpotRadius { get => S.Spot.Radius; set => Edit(() => S.Spot.Radius = Math.Round(value)); }

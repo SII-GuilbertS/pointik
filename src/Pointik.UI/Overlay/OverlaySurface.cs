@@ -160,14 +160,17 @@ public sealed class OverlaySurface : Control
     private void DrawRing(DrawingContext context, TimeSpan now, double compensation)
     {
         var ring = _scene.Settings.Ring;
+        var visibility = _scene.RingIdleVisibility(now);
+        if (visibility <= 0.003) return;
+        var opacity = ring.Opacity * visibility;
         var scale = ring.PressEffect ? _scene.Clicks.GetRingScale(now) : 1;
         var radius = ring.Size / 2 * scale * compensation;
         var thickness = ring.Thickness * compensation;
         var c = ToLocal(_scene.Cursor);
         // Liseré sombre discret sous l'anneau : reste visible sur fond clair comme sur fond foncé.
-        var shadow = new Pen(new SolidColorBrush(ShadowColor, 0.22 * ring.Opacity), thickness + 2 * compensation);
+        var shadow = new Pen(new SolidColorBrush(ShadowColor, 0.22 * opacity), thickness + 2 * compensation);
         context.DrawEllipse(null, shadow, c, radius, radius);
-        context.DrawEllipse(null, new Pen(Brush(ring.Color, ring.Opacity), thickness), c, radius, radius);
+        context.DrawEllipse(null, new Pen(Brush(ring.Color, opacity), thickness), c, radius, radius);
     }
 
     private static IBrush Brush(ArgbColor color, double opacity) =>
