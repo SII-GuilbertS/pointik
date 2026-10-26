@@ -85,6 +85,8 @@ public sealed class KeyboardSettings
 {
     public bool Enabled { get; set; } = true;
     public KeyboardDisplayMode Mode { get; set; } = KeyboardDisplayMode.ShortcutsAndSpecialKeys;
+    /// <summary>Masque automatiquement l'affichage quand un champ de mot de passe a le focus.</summary>
+    public bool HideOnPasswordFields { get; set; } = true;
     /// <summary>Affiche aussi les clics et la molette (« Ctrl + Clic gauche », « Molette ↓ ×3 »).</summary>
     public bool ShowMouseActions { get; set; }
     /// <summary>Nombre de bulles visibles (1 à 6).</summary>

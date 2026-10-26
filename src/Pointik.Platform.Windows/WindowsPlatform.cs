@@ -24,6 +24,7 @@ public static class WindowsPlatform
             Hotkeys = new WindowsHotkeyService(thread, ui),
             Autostart = new RegistryAutostartService(),
             Sound = new WindowsSoundPlayer(),
+            SecureInput = new UiaSecureInputDetector(thread, ui),
             DisposeExtra = () =>
             {
                 s_thread = null;

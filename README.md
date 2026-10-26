@@ -56,9 +56,9 @@ Chaque modification s'applique immédiatement (aperçu en direct sur l'écran et
 
 | Onglet | Contenu |
 |---|---|
-| **Curseur** | Anneau : couleur, diamètre (20 à 120 px), épaisseur, opacité, effet de pression quand un bouton est maintenu. Spot : rayon et niveau d'assombrissement. Le spot est indépendant de l'anneau. |
+| **Curseur** | Anneau : couleur, diamètre (20 à 120 px), épaisseur, opacité, effet de pression quand un bouton est maintenu, effacement quand la souris reste immobile (3 s par défaut, réapparition au premier mouvement). Spot : rayon et niveau d'assombrissement. Le spot est indépendant de l'anneau. |
 | **Clics** | Couleurs du clic gauche (bleu), droit (orange) et milieu (vert), durée (≈ 500 ms par défaut), rayon, son de clic (désactivé par défaut). |
-| **Clavier** | Comportement, position et style (voir ci-dessous). Bouton **Tester sur l'écran**, bouton **Placer à la souris…**. |
+| **Clavier** | Comportement (y compris l'affichage des clics et de la molette, et le masquage dans les champs de mot de passe), position et style (voir ci-dessous). Bouton **Tester sur l'écran**, bouton **Placer à la souris…**. |
 | **Thèmes** | Thèmes prédéfinis et personnels, import et export JSON (voir ci-dessous). |
 | **Zoom** | Niveau (1,5× à 8×, 2× par défaut), suivi « centré sur le curseur » ou « le cadre bouge quand le curseur approche du bord », mode bascule ou « maintenir pour zoomer », durée des transitions (≈ 200 ms). |
 | **Raccourcis** | Modification des raccourcis, détection des conflits. |
@@ -74,6 +74,7 @@ Chaque modification s'applique immédiatement (aperçu en direct sur l'écran et
 - **Répétitions fusionnées :** « Ctrl + Z ×3 ».
 - **Disposition clavier :** celle de la fenêtre active est respectée, AZERTY compris. AltGr (@, €, #…) et les touches mortes (^ puis e = ê) sont reconnus.
 - **Bulles :** 3 visibles par défaut (1 à 6), effacement après 1,5 s (réglable).
+- **Clics et molette (option) :** « Clic gauche », « Ctrl + Clic gauche », « Clic gauche ×2 » pour un double-clic, « Molette ↓ ×3 ».
 
 ### Position des bulles
 
@@ -142,7 +143,9 @@ Le *trimming* (élagage du code inutilisé) n'est **pas** activé :
 - Pointik **lit le clavier uniquement pour l'afficher**. Une frappe n'existe en mémoire que le temps de son affichage : elle n'est **jamais enregistrée, journalisée ni transmise**.
 - Les hooks clavier et souris ne font que transmettre l'événement à l'affichage. Ils ne conservent rien.
 - **Pause totale (Ctrl + Alt + P) :** le hook clavier est retiré. Le clavier n'est alors plus lu du tout, sauf pendant un zoom, pour Échap.
-- **Mode « Tout afficher » :** il montre aussi le texte tapé. Pensez à la pause avant de saisir un mot de passe.
+- **Champs de mot de passe :** quand un champ de mot de passe a le focus, l'affichage du clavier est masqué automatiquement et une pastille orange « Clavier masqué : mot de passe » apparaît (option activée par défaut, onglet *Clavier*). La détection passe par UI Automation (propriété *IsPassword*) : elle couvre les applications Windows classiques, WinForms, WPF et UWP. Juste après un changement de focus, aucune frappe n'est affichée tant que la vérification n'est pas terminée.
+- **Limite de cette détection :** elle dépend de l'accessibilité exposée par l'application. Dans les navigateurs, un champ de mot de passe d'une page web n'est reconnu que si le navigateur expose son contenu à UI Automation (c'est le cas de Chrome et Edge une fois l'accessibilité activée, à vérifier sur votre machine). En cas de doute, utilisez la pause totale (Ctrl + Alt + P).
+- **Mode « Tout afficher » :** il montre aussi le texte tapé. Pensez à la pause avant une saisie confidentielle qui ne serait pas un champ de mot de passe.
 - **Aucun accès réseau**, aucune télémétrie, aucune mise à jour automatique.
 
 ## Avertissement SmartScreen et antivirus

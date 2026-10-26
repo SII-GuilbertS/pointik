@@ -14,6 +14,7 @@ public sealed class PlatformServices : IDisposable
     public required IHotkeyService Hotkeys { get; init; }
     public required IAutostartService Autostart { get; init; }
     public required ISoundPlayer Sound { get; init; }
+    public required ISecureInputDetector SecureInput { get; init; }
 
     /// <summary>Libération supplémentaire propre à la plateforme (thread de messages…).</summary>
     public Action? DisposeExtra { get; init; }
@@ -25,6 +26,7 @@ public sealed class PlatformServices : IDisposable
         Try(Zoom.Dispose);
         Try(Hotkeys.Dispose);
         Try(InputHook.Dispose);
+        Try(SecureInput.Dispose);
         Try(() => DisposeExtra?.Invoke());
     }
 

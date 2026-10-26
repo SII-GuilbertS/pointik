@@ -142,6 +142,25 @@ public interface IAutostartService
     bool TryDisable(out string? error);
 }
 
+/// <summary>
+/// Détecte la saisie dans un champ de mot de passe (ou toute « saisie sécurisée ») afin de masquer
+/// automatiquement l'affichage du clavier. Windows : UI Automation ; macOS : IsSecureEventInputEnabled.
+/// </summary>
+public interface ISecureInputDetector : IDisposable
+{
+    /// <summary>Active la surveillance (aucun coût quand elle est désactivée).</summary>
+    bool Enabled { get; set; }
+
+    /// <summary>
+    /// Une vérification est en cours (le focus vient de changer) : par prudence, les frappes
+    /// ne doivent pas être affichées tant que le résultat n'est pas connu.
+    /// </summary>
+    bool IsChecking { get; }
+
+    /// <summary>Le champ actif est (true) ou n'est plus (false) un champ de mot de passe. Déclenché sur le thread UI.</summary>
+    event Action<bool>? SecureInputChanged;
+}
+
 /// <summary>Lecture d'un court son de clic (optionnel).</summary>
 public interface ISoundPlayer
 {

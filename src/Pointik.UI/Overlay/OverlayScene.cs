@@ -44,6 +44,9 @@ public sealed class OverlayScene
     /// <summary>Pause totale : aucune frappe affichée, pastille rouge visible.</summary>
     public bool KeyboardPaused { get; set; }
 
+    /// <summary>Un champ de mot de passe a le focus : rien n'est affiché, pastille visible.</summary>
+    public bool KeyboardSecureHidden { get; set; }
+
     /// <summary>Moteur de rendu des bulles pour le style courant (reconstruit après un changement de style).</summary>
     public BubbleRenderer BubbleRenderer => _bubbleRenderer ??= new BubbleRenderer(Settings.Keyboard.Style);
 

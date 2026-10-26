@@ -71,7 +71,7 @@ public sealed class OverlaySurface : Control
             // Bulles, pastille et notification : dessinées dans la zone visible du zoom, à taille normale.
             using var _ = zoomed ? context.PushTransform(HudTransform()) : default(DrawingContext.PushedState?);
             if (showKeyboard) DrawKeyboard(context, now);
-            notification?.Draw(context, LocalWorkArea(), now, belowPauseBadge: showKeyboard && _scene.KeyboardPaused);
+            notification?.Draw(context, LocalWorkArea(), now, belowPauseBadge: showKeyboard && (_scene.KeyboardPaused || _scene.KeyboardSecureHidden));
         }
     }
 
@@ -112,6 +112,8 @@ public sealed class OverlaySurface : Control
         }
         if (_scene.KeyboardPaused)
             KeyboardLayer.DrawPauseBadge(context, area);
+        else if (_scene.KeyboardSecureHidden)
+            KeyboardLayer.DrawPauseBadge(context, area, passwordField: true);
     }
 
     private void DrawSpot(DrawingContext context, double radius, double dimming)

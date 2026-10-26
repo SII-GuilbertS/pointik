@@ -146,6 +146,9 @@
                 <ComboBoxItem Content="Raccourcis et touches spéciales uniquement" />
                 <ComboBoxItem Content="Tout afficher (y compris le texte tapé)" />
               </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Mots de passe" />
+              <CheckBox Grid.Column="1" IsChecked="{Binding HideOnPasswordFields}"
+                        Content="Masquer automatiquement le clavier dans un champ de mot de passe" /></Grid>
             <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Souris" />
               <CheckBox Grid.Column="1" IsChecked="{Binding ShowMouseActions}"
                         Content="Afficher aussi les clics et la molette (« Ctrl + Clic gauche », « Molette ↓ ×3 »)" /></Grid>
@@ -357,7 +360,7 @@
 
             <TextBlock Classes="section" Text="Confidentialité" />
             <TextBlock Classes="hint" TextWrapping="Wrap"
-                       Text="Pointik lit le clavier uniquement pour l'afficher : aucune frappe n'est enregistrée, journalisée ni transmise. Aucun accès réseau. La pause totale (Ctrl + Alt + P) coupe immédiatement la lecture du clavier." />
+                       Text="Pointik lit le clavier uniquement pour l'afficher : aucune frappe n'est enregistrée, journalisée ni transmise. Aucun accès réseau. La pause totale (Ctrl + Alt + P) coupe immédiatement la lecture du clavier. Dans un champ de mot de passe, l'affichage est masqué automatiquement (option de l'onglet Clavier)." />
 
             <TextBlock Classes="section" Text="Supprimer toutes les traces" />
             <TextBlock Classes="hint" TextWrapping="Wrap" Margin="0,0,0,8"

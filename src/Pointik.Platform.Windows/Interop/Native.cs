@@ -330,6 +330,25 @@ internal static class Native
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool UnhookWinEvent(nint hWinEventHook);
 
+    public const uint EVENT_OBJECT_FOCUS = 0x8005;
+
+    // ---------------------------------------------------------------- COM (UI Automation)
+
+    public const uint COINIT_MULTITHREADED = 0x0;
+    public const uint CLSCTX_INPROC_SERVER = 0x1;
+
+    [DllImport("ole32.dll")]
+    public static extern int CoInitializeEx(nint pvReserved, uint dwCoInit);
+
+    [DllImport("ole32.dll")]
+    public static extern void CoUninitialize();
+
+    [DllImport("ole32.dll")]
+    public static extern int CoCreateInstance(in Guid rclsid, nint pUnkOuter, uint dwClsContext, in Guid riid, out nint ppv);
+
+    [DllImport("oleaut32.dll")]
+    public static extern int VariantClear(nint pvarg);
+
     // ---------------------------------------------------------------- Divers
 
     [DllImport("kernel32.dll")]

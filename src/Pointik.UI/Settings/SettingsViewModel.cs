@@ -113,6 +113,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool KeyboardEnabled { get => Keyboard.Enabled; set => Edit(() => _app.KeyboardEnabled = value); }
     public int KeyboardModeIndex { get => (int)Keyboard.Mode; set => Edit(() => Keyboard.Mode = (KeyboardDisplayMode)Math.Max(0, value)); }
+    public bool HideOnPasswordFields { get => Keyboard.HideOnPasswordFields; set => Edit(() => Keyboard.HideOnPasswordFields = value); }
     public bool ShowMouseActions { get => Keyboard.ShowMouseActions; set => Edit(() => Keyboard.ShowMouseActions = value); }
     public double MaxVisible { get => Keyboard.MaxVisible; set => Edit(() => Keyboard.MaxVisible = (int)Math.Round(value)); }
     public double DisplaySeconds { get => Keyboard.DisplaySeconds; set => Edit(() => Keyboard.DisplaySeconds = Math.Round(value, 1)); }

@@ -80,6 +80,7 @@ public sealed class AppController
         _platform.InputHook.KeyEvent += OnKey;
         _platform.InputHook.CtrlAltWheel += OnCtrlAltWheel;
         _platform.Hotkeys.HotkeyPressed += OnHotkey;
+        _platform.SecureInput.SecureInputChanged += OnSecureInputChanged;
         RegisterHotkeys();
         UpdateHooks();
         NoteMouseActivity(AppClock.Now);
@@ -246,7 +247,27 @@ public sealed class AppController
         // (sauf pendant le zoom, pour Échap et le mode « maintenir »).
         _platform.InputHook.KeyboardEnabled = (Settings.Keyboard.Enabled && !scene.KeyboardPaused) || _zoom.IsEngaged;
         _platform.InputHook.InterceptCtrlAltWheel = _zoom.IsOnOrEntering;
+        var watchPasswords = Settings.Keyboard.Enabled && Settings.Keyboard.HideOnPasswordFields && !scene.KeyboardPaused;
+        _platform.SecureInput.Enabled = watchPasswords;
+        if (!watchPasswords) scene.KeyboardSecureHidden = false;
     }
+
+    /// <summary>Un champ de mot de passe prend ou perd le focus.</summary>
+    private void OnSecureInputChanged(bool secure)
+    {
+        if (_overlays is null || Scene.KeyboardSecureHidden == secure) return;
+        Scene.KeyboardSecureHidden = secure && Settings.Keyboard.HideOnPasswordFields;
+        // Effacement immédiat : une frappe éventuellement affichée disparaît.
+        if (secure) _keyboard.Clear();
+        _overlays.InvalidateScreen(Scene.KeyboardScreenId);
+    }
+
+    /// <summary>
+    /// L'affichage des frappes est suspendu : champ de mot de passe actif, ou vérification
+    /// en cours juste après un changement de focus (prudence).
+    /// </summary>
+    private bool IsSecureInputLikely =>
+        Settings.Keyboard.HideOnPasswordFields && (Scene.KeyboardSecureHidden || _platform.SecureInput.IsChecking);
 
     /// <summary>Les clics et la molette sont affichés dans les bulles du clavier.</summary>
     private bool ShowsMouseInBubbles =>
@@ -481,6 +502,7 @@ public sealed class AppController
         }
 
         if (Scene.KeyboardPaused || !Settings.Keyboard.Enabled) return;
+        if (IsSecureInputLikely) return;
         if (e.IsDown && IsOwnHotkey(e)) return;
         if (_keyboard.Process(e, now)) ShowBubbles();
     }
@@ -599,6 +621,7 @@ public sealed class AppController
         _platform.InputHook.KeyEvent -= OnKey;
         _platform.InputHook.CtrlAltWheel -= OnCtrlAltWheel;
         _platform.Hotkeys.HotkeyPressed -= OnHotkey;
+        _platform.SecureInput.SecureInputChanged -= OnSecureInputChanged;
         _keyboard.Clear();
         _overlays?.Dispose();
         _platform.Dispose();

@@ -72,11 +72,11 @@ public static class KeyboardLayer
         return (dx, opacity);
     }
 
-    /// <summary>Pastille rouge « clavier en pause », en haut à droite de la zone.</summary>
-    public static void DrawPauseBadge(DrawingContext ctx, Rect area)
+    /// <summary>Pastille « Clavier en pause » (rouge) ou « mot de passe » (orange), en haut à droite de la zone.</summary>
+    public static void DrawPauseBadge(DrawingContext ctx, Rect area, bool passwordField = false)
     {
         const double margin = 14, dot = 7;
-        var label = new FormattedText("Clavier en pause", System.Globalization.CultureInfo.CurrentCulture,
+        var label = new FormattedText(passwordField ? "Clavier masqué : mot de passe" : "Clavier en pause", System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight, new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold), 12,
             Brushes.White);
         var w = label.Width + dot * 2 + 22;
@@ -84,7 +84,8 @@ public static class KeyboardLayer
         var rect = new Rect(area.Right - margin - w, area.Y + margin, w, h);
         ctx.DrawRectangle(new SolidColorBrush(Color.FromArgb(200, 20, 20, 24)), null, new RoundedRect(rect, h / 2));
         var center = new Point(rect.X + 10 + dot, rect.Center.Y);
-        ctx.DrawEllipse(new SolidColorBrush(Color.FromRgb(0xE5, 0x2B, 0x2B)), null, center, dot, dot);
+        var dotColor = passwordField ? Color.FromRgb(0xFF, 0x8A, 0x1E) : Color.FromRgb(0xE5, 0x2B, 0x2B);
+        ctx.DrawEllipse(new SolidColorBrush(dotColor), null, center, dot, dot);
         ctx.DrawText(label, new Point(center.X + dot + 7, rect.Center.Y - label.Height / 2));
     }
 }
