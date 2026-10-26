@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8018101E-DAF0-44CA-9B72-D6949CF1C27D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pointik.Core", "src\Pointik.Core\Pointik.Core.csproj", "{1FE2CCF7-2C2B-4497-8C6D-1A107D1976CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pointik.UI", "src\Pointik.UI\Pointik.UI.csproj", "{BD55BCA0-F9E7-4C51-BDBC-86E1E8A7AA7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pointik.Platform.Windows", "src\Pointik.Platform.Windows\Pointik.Platform.Windows.csproj", "{ACB67C90-8888-41BF-B308-58CA03D52AAE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pointik.App.Windows", "src\Pointik.App.Windows\Pointik.App.Windows.csproj", "{452C76CA-A310-41D5-AA78-A6C80AF25B3C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D9008F5B-F895-43EC-8C77-27CC577D6953}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pointik.Core.Tests", "tests\Pointik.Core.Tests\Pointik.Core.Tests.csproj", "{4778433C-3B6C-4076-9DAF-392DFE95CB33}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1FE2CCF7-2C2B-4497-8C6D-1A107D1976CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FE2CCF7-2C2B-4497-8C6D-1A107D1976CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FE2CCF7-2C2B-4497-8C6D-1A107D1976CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FE2CCF7-2C2B-4497-8C6D-1A107D1976CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD55BCA0-F9E7-4C51-BDBC-86E1E8A7AA7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD55BCA0-F9E7-4C51-BDBC-86E1E8A7AA7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD55BCA0-F9E7-4C51-BDBC-86E1E8A7AA7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD55BCA0-F9E7-4C51-BDBC-86E1E8A7AA7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACB67C90-8888-41BF-B308-58CA03D52AAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACB67C90-8888-41BF-B308-58CA03D52AAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACB67C90-8888-41BF-B308-58CA03D52AAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACB67C90-8888-41BF-B308-58CA03D52AAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{452C76CA-A310-41D5-AA78-A6C80AF25B3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{452C76CA-A310-41D5-AA78-A6C80AF25B3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{452C76CA-A310-41D5-AA78-A6C80AF25B3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{452C76CA-A310-41D5-AA78-A6C80AF25B3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4778433C-3B6C-4076-9DAF-392DFE95CB33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4778433C-3B6C-4076-9DAF-392DFE95CB33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4778433C-3B6C-4076-9DAF-392DFE95CB33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4778433C-3B6C-4076-9DAF-392DFE95CB33}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1FE2CCF7-2C2B-4497-8C6D-1A107D1976CE} = {8018101E-DAF0-44CA-9B72-D6949CF1C27D}
+		{BD55BCA0-F9E7-4C51-BDBC-86E1E8A7AA7A} = {8018101E-DAF0-44CA-9B72-D6949CF1C27D}
+		{ACB67C90-8888-41BF-B308-58CA03D52AAE} = {8018101E-DAF0-44CA-9B72-D6949CF1C27D}
+		{452C76CA-A310-41D5-AA78-A6C80AF25B3C} = {8018101E-DAF0-44CA-9B72-D6949CF1C27D}
+		{4778433C-3B6C-4076-9DAF-392DFE95CB33} = {D9008F5B-F895-43EC-8C77-27CC577D6953}
+	EndGlobalSection
+EndGlobal

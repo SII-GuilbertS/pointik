@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Cœur indépendant de l'OS : aucune dépendance NuGet, aucun code spécifique à une plateforme. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Pointik.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pointik.Core.Tests" />
+  </ItemGroup>
+
+</Project>

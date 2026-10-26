@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Point d'entrée Windows : assemble le Core, l'UI Avalonia et la plateforme Windows. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>Pointik.App.Windows</RootNamespace>
+    <AssemblyName>Pointik</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <UseAppHost>true</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pointik.Core\Pointik.Core.csproj" />
+    <ProjectReference Include="..\Pointik.UI\Pointik.UI.csproj" />
+    <ProjectReference Include="..\Pointik.Platform.Windows\Pointik.Platform.Windows.csproj" />
+  </ItemGroup>
+
+</Project>
