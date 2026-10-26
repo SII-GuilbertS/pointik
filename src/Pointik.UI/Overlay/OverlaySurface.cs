@@ -5,6 +5,7 @@ using Pointik.Core.Geometry;
 using Pointik.Core.Graphics;
 using Pointik.Core.Input;
 using Pointik.Core.Platform;
+using Pointik.UI.Keyboard;
 using Pointik.UI.Services;
 
 namespace Pointik.UI.Overlay;
@@ -60,6 +61,31 @@ public sealed class OverlaySurface : Control
 
         if (_scene.RingVisible && IsNear(_scene.Cursor, _scene.CursorEffectsRadius))
             DrawRing(context, now, compensation);
+
+        if (Screen.Id == _scene.KeyboardScreenId)
+            DrawKeyboard(context, now);
+    }
+
+    /// <summary>Zone de travail de l'écran (sans barre des tâches) en coordonnées locales.</summary>
+    public Rect LocalWorkArea()
+    {
+        var s = Scaling;
+        var w = Screen.WorkArea;
+        return new Rect((w.X - Screen.Bounds.X) / s, (w.Y - Screen.Bounds.Y) / s, w.Width / s, w.Height / s);
+    }
+
+    private void DrawKeyboard(DrawingContext context, TimeSpan now)
+    {
+        var area = LocalWorkArea();
+        var engine = _scene.Keyboard;
+        if (engine.Bubbles.Count > 0)
+        {
+            var kb = _scene.Settings.Keyboard;
+            KeyboardLayer.Draw(context, engine.Bubbles, b => engine.GetVisualState(b, now),
+                _scene.BubbleRenderer, kb.Style, kb.Position, area);
+        }
+        if (_scene.KeyboardPaused)
+            KeyboardLayer.DrawPauseBadge(context, area);
     }
 
     private void DrawSpot(DrawingContext context, double radius, double dimming)

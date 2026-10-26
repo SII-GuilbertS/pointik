@@ -1,4 +1,5 @@
 using Pointik.Core.Geometry;
+using Pointik.Core.Keys;
 using Pointik.Core.Platform;
 using Pointik.Core.Settings;
 
@@ -11,11 +12,11 @@ public sealed class OverlayManager : IDisposable
     private readonly IOverlayWindowHost _host;
     private readonly List<OverlayWindow> _windows = new();
 
-    public OverlayManager(IScreenService screens, IOverlayWindowHost host, AppSettings settings)
+    public OverlayManager(IScreenService screens, IOverlayWindowHost host, AppSettings settings, KeyDisplayEngine keyboard)
     {
         _screens = screens;
         _host = host;
-        Scene = new OverlayScene(settings);
+        Scene = new OverlayScene(settings, keyboard);
         _screens.ScreensChanged += Rebuild;
         _host.StackingMayHaveChanged += BringAllToFront;
     }
@@ -55,6 +56,14 @@ public sealed class OverlayManager : IDisposable
     {
         foreach (var w in _windows)
             if (w.Surface.Screen.Bounds.Contains(p))
+                w.Surface.InvalidateVisual();
+    }
+
+    /// <summary>Redessine l'écran d'identifiant donné.</summary>
+    public void InvalidateScreen(string? screenId)
+    {
+        foreach (var w in _windows)
+            if (w.Surface.Screen.Id == screenId)
                 w.Surface.InvalidateVisual();
     }
 

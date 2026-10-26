@@ -18,7 +18,7 @@ public static class WindowsPlatform
         return new PlatformServices
         {
             InputHook = new WindowsInputHook(thread, ui),
-            KeyTranslator = new PendingKeyTranslator(),
+            KeyTranslator = new WindowsKeyTranslator(),
             Screens = new WindowsScreenService(thread, ui),
             OverlayHost = new WindowsOverlayWindowHost(thread, ui),
             Zoom = zoom,
@@ -50,13 +50,6 @@ public static class WindowsPlatform
         public bool TrySetTransform(double scale, Core.Geometry.ScreenPoint viewOrigin, out string? error) { error = null; return false; }
         public void Reset() { }
         public void Dispose() { }
-    }
-
-    private sealed class PendingKeyTranslator : IKeyTranslator
-    {
-        public string MetaKeyName => "Win";
-        public string AltKeyName => "Alt";
-        public KeyboardInputEvent Translate(in NativeKeyEvent native) => new(KeyId.None, native.IsDown, native.Modifiers);
     }
 
     private sealed class PendingHotkeyService : IHotkeyService

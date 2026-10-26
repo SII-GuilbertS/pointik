@@ -1,5 +1,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Pointik.Core.Input;
+using Pointik.Core.Keys;
 using Pointik.Core.Platform;
 using Pointik.Core.Settings;
 using Pointik.UI.Overlay;
@@ -18,6 +19,7 @@ public sealed class AppController
     private readonly IClassicDesktopStyleApplicationLifetime _lifetime;
     private readonly SettingsStore _store;
     private readonly AnimationTicker _ticker;
+    private readonly KeyDisplayEngine _keyboard;
     private OverlayManager? _overlays;
     private bool _shutDown;
 
@@ -30,17 +32,21 @@ public sealed class AppController
         env.Log.SetDirectory(_store.ActiveDirectory);
         Settings = _store.Load();
         _ticker = new AnimationTicker(OnAnimationFrame);
+        _keyboard = new KeyDisplayEngine(() => Settings.Keyboard,
+            new KeyNames(platform.KeyTranslator.MetaKeyName, platform.KeyTranslator.AltKeyName));
     }
 
     public AppSettings Settings { get; private set; }
 
     public void Start()
     {
-        _overlays = new OverlayManager(_platform.Screens, _platform.OverlayHost, Settings);
+        _overlays = new OverlayManager(_platform.Screens, _platform.OverlayHost, Settings, _keyboard);
         _overlays.Scene.Cursor = _platform.Screens.GetCursorPosition();
+        _overlays.Scene.KeyboardScreenId = ResolveKeyboardScreen().Id;
         _overlays.Rebuild();
 
         _platform.InputHook.MouseEvent += OnMouse;
+        _platform.InputHook.KeyEvent += OnKey;
         UpdateHooks();
     }
 
@@ -53,6 +59,39 @@ public sealed class AppController
         var scene = _overlays?.Scene;
         if (scene is null) return;
         _platform.InputHook.MouseEnabled = scene.RingVisible || scene.SpotVisible || Settings.Clicks.Enabled;
+        // En pause totale, le hook clavier est retiré : aucune frappe n'est même lue.
+        _platform.InputHook.KeyboardEnabled = Settings.Keyboard.Enabled && !scene.KeyboardPaused;
+    }
+
+    /// <summary>Écran qui doit afficher les bulles du clavier.</summary>
+    private ScreenInfo ResolveKeyboardScreen()
+    {
+        var screens = _platform.Screens.GetScreens();
+        var primary = screens.FirstOrDefault(s => s.IsPrimary) ?? screens[0];
+        return Settings.Keyboard.Position.Target switch
+        {
+            TargetScreenMode.CursorScreen => _platform.Screens.GetScreenFromPoint(_platform.Screens.GetCursorPosition()),
+            TargetScreenMode.SpecificScreen => screens.FirstOrDefault(s => s.Id == Settings.Keyboard.Position.ScreenId) ?? primary,
+            _ => primary,
+        };
+    }
+
+    private void OnKey(NativeKeyEvent native)
+    {
+        if (_overlays is null || _overlays.Scene.KeyboardPaused || !Settings.Keyboard.Enabled) return;
+        var e = _platform.KeyTranslator.Translate(native);
+        if (!_keyboard.Process(e, AppClock.Now)) return;
+
+        var scene = _overlays.Scene;
+        var screenId = ResolveKeyboardScreen().Id;
+        if (screenId != scene.KeyboardScreenId)
+        {
+            // Les bulles suivent l'écran du curseur : l'ancien écran est effacé.
+            _overlays.InvalidateScreen(scene.KeyboardScreenId);
+            scene.KeyboardScreenId = screenId;
+        }
+        _overlays.InvalidateScreen(screenId);
+        _ticker.Ensure();
     }
 
     private void OnMouse(MouseInputEvent e)
@@ -95,6 +134,11 @@ public sealed class AppController
         var scene = _overlays.Scene;
         var clicks = scene.Clicks;
         var animating = clicks.IsAnimating(now, scene.RippleDuration);
+        if (_keyboard.Bubbles.Count > 0)
+        {
+            _overlays.InvalidateScreen(scene.KeyboardScreenId);
+            animating |= _keyboard.Update(now);
+        }
         // Une dernière image est dessinée après la fin pour effacer proprement la dernière onde.
         _overlays.InvalidateNear(scene.Cursor, scene.CursorEffectsRadius);
         foreach (var origin in clicks.ActiveOrigins)
@@ -111,6 +155,8 @@ public sealed class AppController
         _shutDown = true;
         _ticker.Stop();
         _platform.InputHook.MouseEvent -= OnMouse;
+        _platform.InputHook.KeyEvent -= OnKey;
+        _keyboard.Clear();
         _overlays?.Dispose();
         _platform.Dispose();
     }

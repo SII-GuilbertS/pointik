@@ -1,6 +1,8 @@
 using Pointik.Core.Effects;
 using Pointik.Core.Geometry;
+using Pointik.Core.Keys;
 using Pointik.Core.Settings;
+using Pointik.UI.Keyboard;
 
 namespace Pointik.UI.Overlay;
 
@@ -10,10 +12,28 @@ namespace Pointik.UI.Overlay;
 /// </summary>
 public sealed class OverlayScene
 {
-    public OverlayScene(AppSettings settings)
+    private BubbleRenderer? _bubbleRenderer;
+
+    public OverlayScene(AppSettings settings, KeyDisplayEngine keyboard)
     {
         Settings = settings;
+        Keyboard = keyboard;
     }
+
+    /// <summary>Bulles du clavier en cours d'affichage.</summary>
+    public KeyDisplayEngine Keyboard { get; }
+
+    /// <summary>Identifiant de l'écran qui affiche les bulles du clavier.</summary>
+    public string? KeyboardScreenId { get; set; }
+
+    /// <summary>Pause totale : aucune frappe affichée, pastille rouge visible.</summary>
+    public bool KeyboardPaused { get; set; }
+
+    /// <summary>Moteur de rendu des bulles pour le style courant (reconstruit après un changement de style).</summary>
+    public BubbleRenderer BubbleRenderer => _bubbleRenderer ??= new BubbleRenderer(Settings.Keyboard.Style);
+
+    /// <summary>À appeler quand le style du clavier change.</summary>
+    public void InvalidateStyle() => _bubbleRenderer = null;
 
     public AppSettings Settings { get; set; }
 
