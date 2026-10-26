@@ -81,6 +81,12 @@ public interface IOverlayWindowHost
     /// <summary>Rend la fenêtre traversable aux clics, non activable, hors Alt+Tab et au premier plan.</summary>
     void ConfigureOverlay(nint windowHandle);
 
+    /// <summary>
+    /// Surface de dessin : reçoit la souris et le clavier (non traversable), reste hors Alt+Tab
+    /// et au premier plan.
+    /// </summary>
+    void ConfigureDrawingSurface(nint windowHandle);
+
     /// <summary>Place la fenêtre exactement sur des limites en pixels physiques.</summary>
     void SetBounds(nint windowHandle, ScreenRect bounds);
 

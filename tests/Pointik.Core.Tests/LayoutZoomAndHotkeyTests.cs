@@ -252,3 +252,74 @@ public class HotkeyAlternativesTests
         Assert.True(HotkeyAlternatives.IsDefault(HotkeyAction.ToggleZoom, new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.Z)));
     }
 }
+
+public class DrawingBoardTests
+{
+    private static readonly Graphics.ArgbColor Red = Graphics.ArgbColor.Parse("#E52B2B");
+
+    [Fact]
+    public void Rectangle_is_normalized_whatever_the_drag_direction()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Rectangle, Red, 5, new ScreenPoint(200, 150));
+        board.Extend(new ScreenPoint(120, 90), constrain: false);
+        Assert.True(board.End(new ScreenPoint(100, 50), constrain: false));
+
+        var shape = Assert.Single(board.Shapes);
+        Assert.Equal(new ScreenRect(100, 50, 100, 100), shape.Bounds);
+        Assert.Null(board.Current);
+    }
+
+    [Fact]
+    public void Shift_makes_squares_and_circles_in_the_drag_direction()
+    {
+        Assert.Equal(new ScreenPoint(60, 60), Drawing.DrawingBoard.Constrain(new ScreenPoint(0, 0), new ScreenPoint(60, 20)));
+        Assert.Equal(new ScreenPoint(-40, 40), Drawing.DrawingBoard.Constrain(new ScreenPoint(0, 0), new ScreenPoint(-40, 10)));
+
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Ellipse, Red, 5, new ScreenPoint(10, 10));
+        board.End(new ScreenPoint(110, 40), constrain: true);
+        var r = board.Shapes[0].Bounds;
+        Assert.Equal(r.Width, r.Height);
+    }
+
+    [Fact]
+    public void Freehand_skips_points_that_are_too_close()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Freehand, Red, 5, new ScreenPoint(0, 0));
+        board.Extend(new ScreenPoint(0.5, 0), false);
+        board.Extend(new ScreenPoint(5, 0), false);
+        board.Extend(new ScreenPoint(5.2, 0.2), false);
+        board.End(new ScreenPoint(10, 0), false);
+        Assert.Equal(3, board.Shapes[0].Points.Count);
+    }
+
+    [Fact]
+    public void Tiny_shapes_are_ignored_and_undo_and_clear_work()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Rectangle, Red, 5, new ScreenPoint(10, 10));
+        Assert.False(board.End(new ScreenPoint(11, 11), false));
+        Assert.True(board.IsEmpty);
+
+        for (var i = 0; i < 3; i++)
+        {
+            board.Begin(Drawing.DrawingTool.Ellipse, Red, 5, new ScreenPoint(0, 0));
+            board.End(new ScreenPoint(50 + i, 50), false);
+        }
+        Assert.True(board.Undo());
+        Assert.Equal(2, board.Shapes.Count);
+        board.Clear();
+        Assert.True(board.IsEmpty);
+        Assert.False(board.Undo());
+    }
+
+    [Fact]
+    public void Drawing_hotkey_has_a_conflict_free_default()
+    {
+        var h = new HotkeySettings();
+        Assert.Equal(new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.D), h.Get(HotkeyAction.ToggleDrawing));
+        Assert.Empty(HotkeyConflicts.Find(h));
+    }
+}

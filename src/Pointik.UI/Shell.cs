@@ -12,7 +12,7 @@ public sealed class Shell : IDisposable
 {
     private readonly AppController _app;
     private readonly TrayIcon _tray;
-    private readonly NativeMenuItem _ring, _spot, _clicks, _keyboard, _pause, _zoom;
+    private readonly NativeMenuItem _ring, _spot, _clicks, _keyboard, _pause, _zoom, _draw;
     private SettingsWindow? _settingsWindow;
 
     public Shell(Application application, AppController app)
@@ -24,6 +24,7 @@ public sealed class Shell : IDisposable
         _keyboard = Toggle("Affichage du clavier", () => _app.KeyboardEnabled = !_app.KeyboardEnabled);
         _pause = Toggle("Pause totale du clavier", () => _app.KeyboardPaused = !_app.KeyboardPaused);
         _zoom = Toggle("Zoom (Ctrl + Alt + Z)", () => _app.ZoomEnabled = !_app.ZoomEnabled);
+        _draw = Toggle("Dessiner à l'écran", () => _app.ToggleDrawing());
 
         var settings = new NativeMenuItem("Réglages…");
         settings.Click += (_, _) => OpenSettings();
@@ -34,6 +35,7 @@ public sealed class Shell : IDisposable
         foreach (var item in new NativeMenuItemBase[]
                  {
                      _ring, _spot, _clicks, _keyboard, _pause, _zoom,
+                     new NativeMenuItemSeparator(), _draw,
                      new NativeMenuItemSeparator(), settings, new NativeMenuItemSeparator(), quit,
                  })
         {
@@ -69,6 +71,8 @@ public sealed class Shell : IDisposable
         _keyboard.IsChecked = _app.KeyboardEnabled;
         _pause.IsChecked = _app.KeyboardPaused;
         _zoom.IsChecked = _app.ZoomEnabled;
+        _draw.IsChecked = _app.IsDrawing;
+        _draw.Header = $"Dessiner à l'écran ({_app.KeyNames.Format(_app.Settings.Hotkeys.Drawing)})";
         _tray.ToolTipText = _app.KeyboardPaused
             ? "Pointik — clavier en pause"
             : _app.CursorHighlightOn ? "Pointik" : "Pointik — anneau et spot masqués";

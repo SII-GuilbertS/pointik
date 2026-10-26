@@ -11,6 +11,7 @@ public enum HotkeyAction
     ToggleKeyboard,
     TogglePause,
     ToggleZoom,
+    ToggleDrawing,
 }
 
 /// <summary>

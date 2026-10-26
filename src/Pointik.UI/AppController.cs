@@ -5,6 +5,7 @@ using Pointik.Core.Keys;
 using Pointik.Core.Platform;
 using Pointik.Core.Settings;
 using Pointik.Core.Zoom;
+using Pointik.UI.Drawing;
 using Pointik.UI.Overlay;
 using Pointik.UI.Services;
 
@@ -26,6 +27,7 @@ public sealed class AppController
     private readonly DispatcherTimer _saveTimer;
     private readonly DispatcherTimer _idleTimer;
     private OverlayManager? _overlays;
+    private DrawingWindow? _drawing;
     private bool _holdZoom;
     private bool _shutDown;
     private bool _tracesDeleted;
@@ -148,6 +150,29 @@ public sealed class AppController
     }
 
     public bool IsZoomActive => _zoom.IsOnOrEntering;
+
+    /// <summary>Le mode dessin est ouvert.</summary>
+    public bool IsDrawing => _drawing is not null;
+
+    /// <summary>Ouvre le mode dessin sur l'écran du curseur, ou le ferme (les dessins sont effacés).</summary>
+    public void ToggleDrawing()
+    {
+        if (_drawing is { } open)
+        {
+            open.Close();
+            return;
+        }
+        var screen = _platform.Screens.GetScreenFromPoint(_platform.Screens.GetCursorPosition());
+        var window = new DrawingWindow(screen, _platform.OverlayHost, Settings.Drawing, SaveSettings);
+        window.Closed += (_, _) =>
+        {
+            _drawing = null;
+            StateChanged?.Invoke();
+        };
+        _drawing = window;
+        window.Show();
+        StateChanged?.Invoke();
+    }
 
     /// <summary>Applique un changement, met à jour hooks et affichage, puis enregistre.</summary>
     private void Change(Action apply, bool save = true, bool? highlightOn = null)
@@ -356,6 +381,9 @@ public sealed class AppController
                 break;
             case HotkeyAction.ToggleZoom:
                 OnZoomHotkey();
+                break;
+            case HotkeyAction.ToggleDrawing:
+                ToggleDrawing();
                 break;
         }
     }
@@ -610,6 +638,7 @@ public sealed class AppController
         _shutDown = true;
         // Sécurité critique en premier : l'écran ne doit jamais rester zoomé.
         _zoom.ResetNow();
+        _drawing?.Close();
         _ticker.Stop();
         _idleTimer.Stop();
         if (_saveTimer.IsEnabled && !_tracesDeleted)

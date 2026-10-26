@@ -53,6 +53,7 @@ public static class HotkeyConflicts
         HotkeyAction.ToggleKeyboard => "Affichage du clavier",
         HotkeyAction.TogglePause => "Pause totale",
         HotkeyAction.ToggleZoom => "Zoom",
+        HotkeyAction.ToggleDrawing => "Dessin à l'écran",
         _ => action.ToString(),
     };
 }

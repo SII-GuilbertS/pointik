@@ -49,6 +49,7 @@ public partial class PointikApp : Application
             Controller.Start();
             Shell = new Shell(this, Controller);
             if (_environment.Arguments.Contains("--reglages")) Shell.OpenSettings();
+            if (_environment.Arguments.Contains("--dessin")) Controller.ToggleDrawing();
         }
         base.OnFrameworkInitializationCompleted();
     }

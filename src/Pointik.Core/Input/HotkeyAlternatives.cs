@@ -29,6 +29,8 @@ public static class HotkeyAlternatives
             HotkeyAction.TogglePause => [KeyId.Q, KeyId.Pause],
             // G comme « grossir », W à côté de Z en AZERTY.
             HotkeyAction.ToggleZoom => [KeyId.G, KeyId.W],
+            // A comme « annoter », N à côté.
+            HotkeyAction.ToggleDrawing => [KeyId.A, KeyId.N],
             _ => [],
         };
         foreach (var key in letters)

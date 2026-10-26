@@ -1,3 +1,4 @@
+﻿using Pointik.Core.Drawing;
 using Pointik.Core.Graphics;
 using Pointik.Core.Input;
 
@@ -19,6 +20,7 @@ public sealed class AppSettings
     public KeyboardSettings Keyboard { get; set; } = new();
     public HotkeySettings Hotkeys { get; set; } = new();
     public GeneralSettings General { get; set; } = new();
+    public DrawingSettings Drawing { get; set; } = new();
 
     /// <summary>Ramène chaque valeur dans sa plage autorisée (fichier modifié à la main, version ancienne…).</summary>
     public AppSettings Normalize()
@@ -30,6 +32,8 @@ public sealed class AppSettings
         Keyboard ??= new();
         Hotkeys ??= new();
         General ??= new();
+        Drawing ??= new();
+        Drawing.Normalize();
         Ring.Normalize();
         Spot.Normalize();
         Clicks.Normalize();
@@ -165,6 +169,7 @@ public sealed class HotkeySettings
     public Hotkey Keyboard { get; set; } = new(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.K);
     public Hotkey Pause { get; set; } = new(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.P);
     public Hotkey Zoom { get; set; } = new(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.Z);
+    public Hotkey Drawing { get; set; } = new(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.D);
 
     public Hotkey Get(HotkeyAction action) => action switch
     {
@@ -173,6 +178,7 @@ public sealed class HotkeySettings
         HotkeyAction.ToggleKeyboard => Keyboard,
         HotkeyAction.TogglePause => Pause,
         HotkeyAction.ToggleZoom => Zoom,
+        HotkeyAction.ToggleDrawing => Drawing,
         _ => Hotkey.None,
     };
 
@@ -185,7 +191,23 @@ public sealed class HotkeySettings
             case HotkeyAction.ToggleKeyboard: Keyboard = value; break;
             case HotkeyAction.TogglePause: Pause = value; break;
             case HotkeyAction.ToggleZoom: Zoom = value; break;
+            case HotkeyAction.ToggleDrawing: Drawing = value; break;
         }
+    }
+}
+
+/// <summary>Dessin à l'écran : dernier outil, couleur et épaisseur utilisés.</summary>
+public sealed class DrawingSettings
+{
+    public DrawingTool Tool { get; set; } = DrawingTool.Rectangle;
+    public ArgbColor Color { get; set; } = ArgbColor.FromRgb(0xE5, 0x2B, 0x2B);
+    /// <summary>Épaisseur du trait en pixels logiques (1 à 40).</summary>
+    public double Thickness { get; set; } = 6;
+
+    internal void Normalize()
+    {
+        if (!Enum.IsDefined(Tool)) Tool = DrawingTool.Rectangle;
+        Thickness = Math.Clamp(Thickness, 1, 40);
     }
 }
 

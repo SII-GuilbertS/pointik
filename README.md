@@ -6,6 +6,7 @@ Pointik met en valeur la souris et le clavier pendant les cours, les présentati
 - un **spot** (mode projecteur) qui assombrit l'écran sauf autour du curseur ;
 - une **onde** à chaque clic ;
 - un **zoom d'écran** en direct ;
+- le **dessin à l'écran** : cadres, ovales, lignes libres ;
 - les **touches du clavier** à l'écran.
 
 Logiciel gratuit, en français, pour Windows 10 (version 2004 et plus) et Windows 11.
@@ -37,6 +38,7 @@ Si l'icône n'est pas visible, cliquez sur la flèche « ^ » de la zone de noti
 | **Ctrl + Alt + Z** | Entrer dans le zoom / en sortir |
 | **Échap** | Quitter le zoom |
 | **Ctrl + Alt + molette** | Pendant le zoom : régler le niveau. La molette n'est interceptée que dans ce cas. |
+| **Ctrl + Alt + D** | Ouvrir / fermer le mode dessin |
 
 **Modifier un raccourci :** onglet *Raccourcis* des réglages. Cliquez sur le raccourci, puis appuyez sur la nouvelle combinaison.
 
@@ -49,6 +51,29 @@ Si l'icône n'est pas visible, cliquez sur la flèche « ^ » de la zone de noti
 Au démarrage, si un raccourci **par défaut** est déjà pris par une autre application, Pointik choisit automatiquement une combinaison de repli libre (d'abord la même touche avec Maj, par exemple Ctrl + Alt + Maj + M), l'enregistre et vous le signale. Un raccourci que vous avez choisi vous-même n'est jamais remplacé : une notification signale simplement que Windows le refuse. Les notifications s'affichent en haut à droite de l'écran, dans l'overlay : elles ne prennent jamais le focus et laissent passer les clics.
 
 Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavier.
+
+## Dessin à l'écran
+
+**Ctrl + Alt + D** (ou *Dessiner à l'écran* dans le menu de l'icône) ouvre le mode dessin sur l'écran du curseur. Une barre d'outils apparaît en haut de l'écran.
+
+| Action | Souris ou touche |
+|---|---|
+| Tracer | Glisser avec le bouton gauche |
+| Cadre / Ovale / Main levée | Boutons de la barre, ou **C** / **O** / **L** |
+| Carré ou cercle | Maintenir **Maj** pendant le tracé |
+| Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre |
+| Annuler la dernière forme | **Ctrl + Z** |
+| Tout effacer | **Suppr** |
+| Quitter (les dessins sont effacés) | **Échap**, ou Ctrl + Alt + D |
+
+**Pendant le dessin :**
+- La souris sert à dessiner : les clics n'atteignent plus les applications. Quittez le mode dessin pour reprendre la main.
+- L'anneau, les ondes de clic et les bulles du clavier restent affichés.
+- Le dernier outil, la dernière couleur et la dernière épaisseur sont mémorisés.
+
+**Limites :**
+- **Écrans :** le dessin se fait sur un seul écran à la fois, celui du curseur à l'ouverture.
+- **Avec le zoom :** dessiner pendant le zoom fonctionne, mais le dessin est agrandi avec le reste de l'écran.
 
 ## Réglages
 
