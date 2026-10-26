@@ -10,6 +10,12 @@
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <InvariantGlobalization>false</InvariantGlobalization>
     <UseAppHost>true</UseAppHost>
+    <ApplicationIcon>..\Pointik.UI\Assets\Pointik.ico</ApplicationIcon>
+    <AssemblyTitle>Pointik</AssemblyTitle>
+    <Description>Pointik — mise en valeur de la souris et du clavier</Description>
+    <!-- Publication : un seul fichier autonome (voir publish.ps1). Pas de trimming : Avalonia
+         utilise la réflexion (XAML, liaisons) et le gain ne justifie pas le risque. -->
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>

@@ -23,6 +23,12 @@ public sealed class ErrorLog
         lock (_gate) _directory = directory;
     }
 
+    /// <summary>N'écrit plus rien (après « Supprimer toutes les traces »).</summary>
+    public void Disable()
+    {
+        lock (_gate) _directory = null;
+    }
+
     public void Error(string context, Exception ex) => Write("ERREUR", $"{context} : {ex}");
 
     public void Warning(string message) => Write("AVERT.", message);
@@ -35,6 +41,7 @@ public sealed class ErrorLog
             {
                 var path = FilePath;
                 if (path is null) return;
+                Directory.CreateDirectory(_directory!);
                 var info = new FileInfo(path);
                 // Rotation simple : au-delà de la taille maximale, on repart d'un fichier vide.
                 if (info.Exists && info.Length > MaxBytes) info.Delete();

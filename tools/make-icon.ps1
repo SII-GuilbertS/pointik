@@ -1,4 +1,4 @@
-# Génère l'icône originale de Pointik (anneau jaune + point de clic bleu sur fond sombre arrondi)
+﻿# Génère l'icône originale de Pointik (anneau jaune + point de clic bleu sur fond sombre arrondi)
 # au format ICO multi-tailles (entrées PNG).
 param([string]$Out)
 Add-Type -AssemblyName System.Drawing

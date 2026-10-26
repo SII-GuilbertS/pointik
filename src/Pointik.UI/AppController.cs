@@ -27,6 +27,7 @@ public sealed class AppController
     private OverlayManager? _overlays;
     private bool _holdZoom;
     private bool _shutDown;
+    private bool _tracesDeleted;
 
     public AppController(PlatformServices platform, AppEnvironment env, IClassicDesktopStyleApplicationLifetime lifetime)
     {
@@ -160,6 +161,45 @@ public sealed class AppController
     /// <summary>Services d'écran et de fenêtres (mode placement, notifications).</summary>
     public IScreenService ScreenService => _platform.Screens;
     public IOverlayWindowHost OverlayHost => _platform.OverlayHost;
+
+    // ------------------------------------------------------------------ Mode portable
+
+    /// <summary>Réglages enregistrés à côté de l'exécutable (sinon dans le dossier de repli).</summary>
+    public bool IsPortable => _store.IsPortable;
+
+    /// <summary>Fichier de réglages utilisé.</summary>
+    public string SettingsFilePath => _store.ActiveFilePath;
+
+    /// <summary>État réel du lancement avec Windows (relu depuis l'OS).</summary>
+    public bool LaunchAtStartup => _platform.Autostart.IsEnabled;
+
+    /// <summary>Active ou retire le lancement avec Windows. Retourne un message d'erreur éventuel.</summary>
+    public string? SetLaunchAtStartup(bool enabled)
+    {
+        string? error;
+        var ok = enabled
+            ? _platform.Autostart.TryEnable(_env.ExecutablePath, out error)
+            : _platform.Autostart.TryDisable(out error);
+        Settings.General.LaunchAtStartup = _platform.Autostart.IsEnabled;
+        SaveSettings();
+        return ok ? null : error;
+    }
+
+    /// <summary>
+    /// Supprime toutes les traces (réglages, journal, entrée de démarrage) puis quitte
+    /// sans rien réécrire. Retourne la liste des éléments qui n'ont pas pu être supprimés.
+    /// </summary>
+    public IReadOnlyList<string> DeleteAllTracesAndExit()
+    {
+        var failures = new List<string>();
+        if (!_platform.Autostart.TryDisable(out var error)) failures.Add(error ?? "Entrée de démarrage");
+        _saveTimer.Stop();
+        _tracesDeleted = true;
+        _env.Log.Disable();
+        failures.AddRange(_store.DeleteAllTraces());
+        if (failures.Count == 0) RequestExit();
+        return failures;
+    }
 
     /// <summary>Affiche des bulles d'exemple sur l'écran cible (bouton « Tester »).</summary>
     public void TestKeyboard()
@@ -455,7 +495,7 @@ public sealed class AppController
         // Sécurité critique en premier : l'écran ne doit jamais rester zoomé.
         _zoom.ResetNow();
         _ticker.Stop();
-        if (_saveTimer.IsEnabled)
+        if (_saveTimer.IsEnabled && !_tracesDeleted)
         {
             _saveTimer.Stop();
             _store.Save(Settings);

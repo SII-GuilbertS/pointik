@@ -335,6 +335,37 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
+      <!-- ============================================================ Général -->
+      <TabItem Header="Général">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <TextBlock Classes="section" Text="Mode portable" />
+            <TextBlock Text="{Binding StorageDescription}" TextWrapping="Wrap" />
+            <SelectableTextBlock Text="{Binding SettingsFilePath}" Opacity="0.7" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" />
+
+            <TextBlock Classes="section" Text="Démarrage" />
+            <CheckBox IsChecked="{Binding LaunchAtStartup}" Content="Lancer Pointik avec Windows (ajoute une entrée dans le registre de l'utilisateur)" />
+
+            <TextBlock Classes="section" Text="Confidentialité" />
+            <TextBlock Classes="hint" TextWrapping="Wrap"
+                       Text="Pointik lit le clavier uniquement pour l'afficher : aucune frappe n'est enregistrée, journalisée ni transmise. Aucun accès réseau. La pause totale (Ctrl + Alt + P) coupe immédiatement la lecture du clavier." />
+
+            <TextBlock Classes="section" Text="Supprimer toutes les traces" />
+            <TextBlock Classes="hint" TextWrapping="Wrap" Margin="0,0,0,8"
+                       Text="Supprime le fichier de réglages (à côté de l'exe et dans le dossier utilisateur), le journal d'erreurs et l'entrée de démarrage, puis ferme Pointik." />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Supprimer toutes les traces…" Command="{Binding DeleteTracesCommand}" IsVisible="{Binding !ConfirmingDelete}" />
+              <Button Content="Confirmer : tout supprimer et quitter" Command="{Binding DeleteTracesCommand}" IsVisible="{Binding ConfirmingDelete}"
+                      Background="#E5484D" Foreground="White" />
+              <Button Content="Annuler" Command="{Binding CancelDeleteTracesCommand}" IsVisible="{Binding ConfirmingDelete}" />
+            </StackPanel>
+
+            <TextBlock Classes="section" Text="À propos" />
+            <TextBlock Classes="hint" TextWrapping="Wrap"
+                       Text="Pointik 1.0 — logiciel gratuit pour mettre en valeur la souris et le clavier pendant les cours, présentations et tutoriels vidéo." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
     </TabControl>
   </DockPanel>
 </Window>

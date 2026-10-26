@@ -14,4 +14,9 @@
     <!-- Version unique d'Avalonia pour toute la solution -->
     <AvaloniaVersion>11.3.20</AvaloniaVersion>
   </PropertyGroup>
+
+  <!-- En Release, aucun fichier de symboles : l'exe publié reste seul. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
 </Project>

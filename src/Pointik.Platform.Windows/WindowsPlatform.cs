@@ -1,4 +1,3 @@
-using Pointik.Core.Input;
 using Pointik.Core.Platform;
 using Pointik.Platform.Windows.Interop;
 
@@ -23,7 +22,7 @@ public static class WindowsPlatform
             OverlayHost = new WindowsOverlayWindowHost(thread, ui),
             Zoom = zoom,
             Hotkeys = new WindowsHotkeyService(thread, ui),
-            Autostart = new PendingAutostart(),
+            Autostart = new RegistryAutostartService(),
             Sound = new WindowsSoundPlayer(),
             DisposeExtra = () =>
             {
@@ -40,13 +39,5 @@ public static class WindowsPlatform
     {
         try { s_zoom?.Reset(); }
         catch { /* au mieux */ }
-    }
-
-    // Implémentations provisoires, remplacées aux étapes suivantes.
-    private sealed class PendingAutostart : IAutostartService
-    {
-        public bool IsEnabled => false;
-        public bool TryEnable(string executablePath, out string? error) { error = null; return false; }
-        public bool TryDisable(out string? error) { error = null; return true; }
     }
 }

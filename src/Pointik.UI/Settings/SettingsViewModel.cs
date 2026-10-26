@@ -36,6 +36,8 @@ public sealed class SettingsViewModel : ObservableObject
         SaveThemeCommand = new RelayCommand(SaveCurrentAsTheme);
         DeleteThemeCommand = new RelayCommand(DeleteSelectedTheme);
         ResetHotkeysCommand = new RelayCommand(ResetHotkeys);
+        DeleteTracesCommand = new RelayCommand(DeleteTraces);
+        CancelDeleteTracesCommand = new RelayCommand(() => ConfirmingDelete = false);
     }
 
     private AppSettings S => _app.Settings;
@@ -389,6 +391,50 @@ public sealed class SettingsViewModel : ObservableObject
         foreach (var (a, e) in errors) all[a] = e;
         foreach (var (a, e) in _app.HotkeyErrors) all.TryAdd(a, e);
         foreach (var row in Hotkeys) row.Refresh(all.GetValueOrDefault(row.Action));
+    }
+
+    // ================================================================== Général (mode portable)
+
+    private bool _confirmingDelete;
+
+    public string StorageDescription => _app.IsPortable
+        ? "Mode portable : les réglages sont enregistrés à côté de Pointik.exe."
+        : "Le dossier de Pointik.exe est en lecture seule : les réglages sont enregistrés dans le dossier utilisateur.";
+
+    public string SettingsFilePath => _app.SettingsFilePath;
+
+    public bool LaunchAtStartup
+    {
+        get => _app.LaunchAtStartup;
+        set
+        {
+            var error = _app.SetLaunchAtStartup(value);
+            Status = error ?? (value ? "Pointik se lancera à l'ouverture de session." : "Pointik ne se lancera plus avec Windows.");
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Deuxième étape de « Supprimer toutes les traces » (confirmation).</summary>
+    public bool ConfirmingDelete
+    {
+        get => _confirmingDelete;
+        set => SetProperty(ref _confirmingDelete, value);
+    }
+
+    public RelayCommand DeleteTracesCommand { get; }
+    public RelayCommand CancelDeleteTracesCommand { get; }
+
+    private void DeleteTraces()
+    {
+        if (!ConfirmingDelete)
+        {
+            ConfirmingDelete = true;
+            return;
+        }
+        ConfirmingDelete = false;
+        var failures = _app.DeleteAllTracesAndExit();
+        if (failures.Count > 0)
+            Status = "Certains éléments n'ont pas pu être supprimés : " + string.Join(", ", failures);
     }
 
     // ================================================================== Divers
