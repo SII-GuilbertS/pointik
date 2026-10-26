@@ -225,3 +225,30 @@ public class IdleFadeTests
         Assert.False(Effects.IdleFade.IsFading(start + TimeSpan.FromSeconds(60), start, delay));
     }
 }
+
+public class HotkeyAlternativesTests
+{
+    [Fact]
+    public void Each_action_has_valid_and_distinct_fallbacks()
+    {
+        var defaults = new HotkeySettings();
+        foreach (var action in Enum.GetValues<HotkeyAction>())
+        {
+            var usable = HotkeyAlternatives.UsableCandidates(action, defaults).ToList();
+            Assert.True(usable.Count >= 3);
+            Assert.DoesNotContain(defaults.Get(action), usable);
+            Assert.All(usable, h => Assert.Null(HotkeyConflicts.Validate(h)));
+            Assert.Equal(usable.Count, usable.Distinct().Count());
+        }
+    }
+
+    [Fact]
+    public void Fallbacks_never_collide_with_other_actions()
+    {
+        var hotkeys = new HotkeySettings { Spot = new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.H) };
+        var first = HotkeyAlternatives.UsableCandidates(HotkeyAction.ToggleRingAndSpot, hotkeys).First();
+        Assert.Equal(new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt | KeyModifiers.Shift, KeyId.M), first);
+        Assert.DoesNotContain(hotkeys.Spot, HotkeyAlternatives.UsableCandidates(HotkeyAction.ToggleRingAndSpot, hotkeys));
+        Assert.True(HotkeyAlternatives.IsDefault(HotkeyAction.ToggleZoom, new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.Z)));
+    }
+}

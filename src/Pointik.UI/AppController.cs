@@ -266,21 +266,52 @@ public sealed class AppController
         var errors = new Dictionary<HotkeyAction, string>();
         var conflicts = HotkeyConflicts.Find(Settings.Hotkeys);
         _platform.Hotkeys.UnregisterAll();
+        var replaced = new List<string>();
         foreach (var action in Enum.GetValues<HotkeyAction>())
         {
             if (conflicts.ContainsKey(action)) continue;
             var hotkey = Settings.Hotkeys.Get(action);
-            if (!_platform.Hotkeys.TryRegister(action, hotkey, out var error))
-                errors[action] = error ?? "Raccourci refusé.";
+            if (_platform.Hotkeys.TryRegister(action, hotkey, out var error)) continue;
+
+            // Raccourci par défaut déjà pris (au démarrage) : on essaie une combinaison de repli libre.
+            if (notify && HotkeyAlternatives.IsDefault(action, hotkey) && TryRegisterAlternative(action) is { } alternative)
+            {
+                replaced.Add($"{_keyboard.Names.Format(hotkey)} est déjà utilisé par une autre application : "
+                    + $"« {HotkeyConflicts.DisplayName(action)} » utilise désormais {_keyboard.Names.Format(alternative)}.");
+                continue;
+            }
+            errors[action] = error ?? "Raccourci refusé.";
         }
         HotkeyErrors = errors;
-        if (errors.Count > 0 && notify)
+        if (replaced.Count > 0)
         {
-            var list = string.Join(", ", errors.Keys.Select(a => _keyboard.Names.Format(Settings.Hotkeys.Get(a))));
-            _env.Log.Warning($"Raccourcis non enregistrés : {list}");
-            Notify("Raccourci indisponible", $"{list} : déjà utilisé par une autre application. Modifiez-le dans les réglages.");
+            _env.Log.Warning("Raccourcis remplacés : " + string.Join(" ", replaced));
+            SaveSettings();
+        }
+        if (notify && (errors.Count > 0 || replaced.Count > 0))
+        {
+            var lines = new List<string>(replaced);
+            if (errors.Count > 0)
+            {
+                var list = string.Join(", ", errors.Keys.Select(a => _keyboard.Names.Format(Settings.Hotkeys.Get(a))));
+                _env.Log.Warning($"Raccourcis non enregistrés : {list}");
+                lines.Add($"{list} : déjà utilisé par une autre application. Modifiez-le dans les réglages.");
+            }
+            Notify(errors.Count > 0 ? "Raccourci indisponible" : "Raccourci remplacé", string.Join("\n", lines));
         }
         return errors;
+    }
+
+    /// <summary>Enregistre la première combinaison de repli libre et la mémorise. Retourne null si aucune.</summary>
+    private Hotkey? TryRegisterAlternative(HotkeyAction action)
+    {
+        foreach (var candidate in HotkeyAlternatives.UsableCandidates(action, Settings.Hotkeys))
+        {
+            if (!_platform.Hotkeys.TryRegister(action, candidate, out _)) continue;
+            Settings.Hotkeys.Set(action, candidate);
+            return candidate;
+        }
+        return null;
     }
 
     /// <summary>Suspend les raccourcis globaux (capture d'un nouveau raccourci dans les réglages).</summary>

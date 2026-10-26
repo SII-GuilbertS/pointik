@@ -46,7 +46,7 @@ Si l'icône n'est pas visible, cliquez sur la flèche « ^ » de la zone de noti
 - combinaison déjà prise par une autre application ;
 - **Ctrl + Alt + flèches**, refusé parce que certains pilotes graphiques s'en servent pour faire pivoter l'écran.
 
-Au démarrage, une notification signale tout raccourci que Windows refuse. Les notifications s'affichent en haut à droite de l'écran, dans l'overlay : elles ne prennent jamais le focus et laissent passer les clics.
+Au démarrage, si un raccourci **par défaut** est déjà pris par une autre application, Pointik choisit automatiquement une combinaison de repli libre (d'abord la même touche avec Maj, par exemple Ctrl + Alt + Maj + M), l'enregistre et vous le signale. Un raccourci que vous avez choisi vous-même n'est jamais remplacé : une notification signale simplement que Windows le refuse. Les notifications s'affichent en haut à droite de l'écran, dans l'overlay : elles ne prennent jamais le focus et laissent passer les clics.
 
 Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavier.
 
