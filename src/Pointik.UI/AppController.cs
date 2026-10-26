@@ -241,12 +241,17 @@ public sealed class AppController
     {
         if (_overlays is null) return;
         var scene = Scene;
-        _platform.InputHook.MouseEnabled = scene.RingVisible || scene.SpotVisible || Settings.Clicks.Enabled || _zoom.IsEngaged;
+        _platform.InputHook.MouseEnabled = scene.RingVisible || scene.SpotVisible || Settings.Clicks.Enabled
+            || _zoom.IsEngaged || ShowsMouseInBubbles;
         // En pause totale, le hook clavier est retiré : aucune frappe n'est même lue
         // (sauf pendant le zoom, pour Échap et le mode « maintenir »).
         _platform.InputHook.KeyboardEnabled = (Settings.Keyboard.Enabled && !scene.KeyboardPaused) || _zoom.IsEngaged;
         _platform.InputHook.InterceptCtrlAltWheel = _zoom.IsOnOrEntering;
     }
+
+    /// <summary>Les clics et la molette sont affichés dans les bulles du clavier.</summary>
+    private bool ShowsMouseInBubbles =>
+        Settings.Keyboard.Enabled && Settings.Keyboard.ShowMouseActions && !(_overlays?.Scene.KeyboardPaused ?? false);
 
     // ------------------------------------------------------------------ Raccourcis globaux
 
@@ -398,7 +403,14 @@ public sealed class AppController
                     scene.Clicks.AddRipple(e.Position, e.Button, now);
                     if (Settings.Clicks.Sound) _platform.Sound.PlayClick(e.Button);
                 }
+                if (down && ShowsMouseInBubbles && _keyboard.ProcessClick(e.Button, e.Modifiers, now))
+                    ShowBubbles();
                 _ticker.Ensure();
+                break;
+
+            case MouseEventKind.Wheel:
+                if (ShowsMouseInBubbles && _keyboard.ProcessWheel(e.WheelDelta, e.Modifiers, now))
+                    ShowBubbles();
                 break;
         }
     }
@@ -440,8 +452,13 @@ public sealed class AppController
 
         if (Scene.KeyboardPaused || !Settings.Keyboard.Enabled) return;
         if (e.IsDown && IsOwnHotkey(e)) return;
-        if (!_keyboard.Process(e, now)) return;
+        if (_keyboard.Process(e, now)) ShowBubbles();
+    }
 
+    /// <summary>Les bulles ont changé : redessine l'écran cible (qui suit éventuellement le curseur).</summary>
+    private void ShowBubbles()
+    {
+        if (_overlays is null) return;
         var screenId = ResolveKeyboardScreen().Id;
         if (screenId != Scene.KeyboardScreenId)
         {

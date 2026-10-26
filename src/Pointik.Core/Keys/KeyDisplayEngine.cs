@@ -100,6 +100,14 @@ public sealed class KeyDisplayEngine
         };
     }
 
+    /// <summary>Affiche un clic de souris (« Ctrl + Clic gauche » ; un double-clic devient « ×2 »).</summary>
+    public bool ProcessClick(MouseButton button, KeyModifiers modifiers, TimeSpan now) =>
+        AddShortcut(_names.GetMouseParts(modifiers, KeyNames.GetMouseName(button)), now);
+
+    /// <summary>Affiche un cran de molette (« Molette ↓ ×5 »).</summary>
+    public bool ProcessWheel(int delta, KeyModifiers modifiers, TimeSpan now) =>
+        delta != 0 && AddShortcut(_names.GetMouseParts(modifiers, KeyNames.GetWheelName(delta)), now);
+
     /// <summary>Ajoute (ou fusionne) une bulle de raccourci.</summary>
     public bool AddShortcut(IReadOnlyList<string> parts, TimeSpan now)
     {

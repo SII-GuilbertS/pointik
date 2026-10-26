@@ -82,6 +82,26 @@ public sealed class KeyNames
         };
     }
 
+    /// <summary>Nom d'un bouton de souris (« Clic gauche »).</summary>
+    public static string GetMouseName(MouseButton button) => button switch
+    {
+        MouseButton.Left => "Clic gauche",
+        MouseButton.Right => "Clic droit",
+        MouseButton.Middle => "Clic milieu",
+        MouseButton.X1 => "Bouton 4",
+        _ => "Bouton 5",
+    };
+
+    /// <summary>Nom d'un mouvement de molette (« Molette ↑ »).</summary>
+    public static string GetWheelName(int delta) => delta > 0 ? "Molette ↑" : "Molette ↓";
+
+    /// <summary>Éléments affichables d'une action de souris avec ses modificateurs (« Ctrl », « Clic gauche »).</summary>
+    public IReadOnlyList<string> GetMouseParts(KeyModifiers modifiers, string actionName)
+    {
+        var parts = new List<string>(GetParts(modifiers, KeyId.None)) { actionName };
+        return parts;
+    }
+
     /// <summary>
     /// Décompose un raccourci en éléments affichables, dans l'ordre usuel de Windows :
     /// Win, Ctrl, Alt, Maj, puis la touche.

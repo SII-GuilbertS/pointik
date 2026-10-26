@@ -85,6 +85,8 @@ public sealed class KeyboardSettings
 {
     public bool Enabled { get; set; } = true;
     public KeyboardDisplayMode Mode { get; set; } = KeyboardDisplayMode.ShortcutsAndSpecialKeys;
+    /// <summary>Affiche aussi les clics et la molette (« Ctrl + Clic gauche », « Molette ↓ ×3 »).</summary>
+    public bool ShowMouseActions { get; set; }
     /// <summary>Nombre de bulles visibles (1 à 6).</summary>
     public int MaxVisible { get; set; } = 3;
     /// <summary>Durée d'affichage d'une bulle avant son effacement, en secondes.</summary>

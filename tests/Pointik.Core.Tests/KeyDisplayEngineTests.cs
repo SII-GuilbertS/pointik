@@ -130,6 +130,21 @@ public class KeyDisplayEngineTests
     }
 
     [Fact]
+    public void Clicks_and_wheel_are_shown_with_modifiers_and_merged()
+    {
+        _settings.MaxVisible = 4;
+        _engine.ProcessClick(MouseButton.Left, KeyModifiers.Ctrl, Ms(0));
+        _engine.ProcessClick(MouseButton.Left, KeyModifiers.None, Ms(100));
+        _engine.ProcessClick(MouseButton.Left, KeyModifiers.None, Ms(250)); // double-clic
+        for (var i = 0; i < 4; i++) _engine.ProcessWheel(-120, KeyModifiers.None, Ms(300 + i * 30));
+        _engine.ProcessClick(MouseButton.Right, KeyModifiers.Shift, Ms(500));
+
+        Assert.Equal(["Ctrl + Clic gauche", "Clic gauche ×2", "Molette ↓ ×4", "Maj + Clic droit"],
+            _engine.Bubbles.Select(b => b.DisplayText));
+        Assert.Equal(["Ctrl", "Clic gauche"], _engine.Bubbles[0].Parts);
+    }
+
+    [Fact]
     public void Clear_removes_everything_immediately()
     {
         _engine.Process(Down(KeyId.C, KeyModifiers.Ctrl), Ms(0));

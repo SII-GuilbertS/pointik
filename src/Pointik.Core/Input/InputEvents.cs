@@ -22,11 +22,14 @@ public enum MouseEventKind
 }
 
 /// <summary>Événement souris global, en pixels physiques du bureau virtuel.</summary>
+/// <param name="WheelDelta">Rotation de la molette (120 = un cran vers le haut).</param>
+/// <param name="Modifiers">Modificateurs enfoncés au moment de l'événement (« Ctrl + clic »).</param>
 public readonly record struct MouseInputEvent(
     MouseEventKind Kind,
     ScreenPoint Position,
     MouseButton Button = MouseButton.Left,
-    int WheelDelta = 0);
+    int WheelDelta = 0,
+    KeyModifiers Modifiers = KeyModifiers.None);
 
 /// <summary>
 /// Frappe brute fournie par le hook de la plateforme, avant traduction.

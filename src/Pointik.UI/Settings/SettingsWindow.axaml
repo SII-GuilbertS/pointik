@@ -146,6 +146,9 @@
                 <ComboBoxItem Content="Raccourcis et touches spéciales uniquement" />
                 <ComboBoxItem Content="Tout afficher (y compris le texte tapé)" />
               </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Souris" />
+              <CheckBox Grid.Column="1" IsChecked="{Binding ShowMouseActions}"
+                        Content="Afficher aussi les clics et la molette (« Ctrl + Clic gauche », « Molette ↓ ×3 »)" /></Grid>
             <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Bulles visibles" />
               <StackPanel Classes="value"><Slider Minimum="1" Maximum="6" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MaxVisible}" />
                 <TextBlock Text="{Binding MaxVisible, StringFormat='{}{0:0}'}" /></StackPanel></Grid>

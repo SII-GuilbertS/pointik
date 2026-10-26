@@ -98,18 +98,21 @@ internal sealed class WindowsInputHook : IInputHook
                 }
                 else if (msg == WM_MOUSEWHEEL)
                 {
+                    var delta = (short)(data.mouseData >> 16);
                     if (_interceptWheel && IsDown(VK_CONTROL) && IsDown(VK_MENU))
                     {
-                        var delta = (short)(data.mouseData >> 16);
                         _ui.Post(() => CtrlAltWheel?.Invoke(delta));
                         // Seul cas où un événement est consommé : Ctrl+Alt+molette pendant le zoom.
                         return 1;
                     }
+                    var e = new MouseInputEvent(MouseEventKind.Wheel, new ScreenPoint(data.pt.X, data.pt.Y),
+                        WheelDelta: delta, Modifiers: CurrentModifiers());
+                    _ui.Post(() => MouseEvent?.Invoke(e));
                 }
                 else if (TryGetButton(msg, data.mouseData, out var button, out var isDown))
                 {
                     var e = new MouseInputEvent(isDown ? MouseEventKind.ButtonDown : MouseEventKind.ButtonUp,
-                        new ScreenPoint(data.pt.X, data.pt.Y), button);
+                        new ScreenPoint(data.pt.X, data.pt.Y), button, Modifiers: CurrentModifiers());
                     _ui.Post(() => MouseEvent?.Invoke(e));
                 }
             }
@@ -157,11 +160,7 @@ internal sealed class WindowsInputHook : IInputHook
                 var isDown = msg is WM_KEYDOWN or WM_SYSKEYDOWN;
 
                 // Instantané minimal de l'état des modificateurs, pris au moment exact de la frappe.
-                var mods = KeyModifiers.None;
-                if (IsDown(VK_CONTROL)) mods |= KeyModifiers.Ctrl;
-                if (IsDown(VK_SHIFT)) mods |= KeyModifiers.Shift;
-                if (IsDown(VK_MENU)) mods |= KeyModifiers.Alt;
-                if (IsDown(VK_LWIN) || IsDown(VK_RWIN)) mods |= KeyModifiers.Meta;
+                var mods = CurrentModifiers();
                 // AltGr = Alt droite + Ctrl gauche simulé par Windows (dispositions européennes).
                 var altGr = IsDown(VK_RMENU) && IsDown(VK_LCONTROL);
                 var caps = (GetKeyState(VK_CAPITAL) & 1) != 0;
@@ -181,6 +180,17 @@ internal sealed class WindowsInputHook : IInputHook
     }
 
     private static bool IsDown(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
+
+    /// <summary>Modificateurs enfoncés à cet instant.</summary>
+    private static KeyModifiers CurrentModifiers()
+    {
+        var mods = KeyModifiers.None;
+        if (IsDown(VK_CONTROL)) mods |= KeyModifiers.Ctrl;
+        if (IsDown(VK_SHIFT)) mods |= KeyModifiers.Shift;
+        if (IsDown(VK_MENU)) mods |= KeyModifiers.Alt;
+        if (IsDown(VK_LWIN) || IsDown(VK_RWIN)) mods |= KeyModifiers.Meta;
+        return mods;
+    }
 
     public void Dispose()
     {
