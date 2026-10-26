@@ -325,7 +325,7 @@
           <StackPanel>
             <TextBlock Classes="section" Text="Raccourcis globaux" />
             <TextBlock Classes="hint" Margin="0,0,0,8"
-                       Text="Cliquez sur un raccourci puis appuyez sur la nouvelle combinaison : avec Ctrl, Alt ou Win, ou une touche F1 à F24 seule (F12 seule exceptée). Échap annule. Les conflits sont signalés en rouge." />
+                       Text="Cliquez sur un raccourci puis appuyez sur la nouvelle combinaison (avec Ctrl, Alt ou Win). Échap annule. Les conflits sont signalés en rouge." />
             <ItemsControl ItemsSource="{Binding Hotkeys}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="s:HotkeyRowViewModel">

@@ -34,13 +34,8 @@ public static class HotkeyConflicts
     public static string? Validate(Hotkey h)
     {
         if (h.IsEmpty) return null;
-        var hasCommandModifier = (h.Modifiers & (KeyModifiers.Ctrl | KeyModifiers.Alt | KeyModifiers.Meta)) != 0;
-        // Les touches de fonction (F1 à F24) sont acceptées seules ou avec Maj : elles ne servent pas à taper du texte.
-        if (!hasCommandModifier && !h.Key.IsFunctionKey())
-            return "Un raccourci global doit contenir Ctrl, Alt ou Win (sauf les touches F1 à F24).";
-        // F12 seule est réservée par Windows au débogueur : RegisterHotKey la refuse.
-        if (h.Key == KeyId.F12 && h.Modifiers == KeyModifiers.None)
-            return "F12 seule est réservée par Windows : ajoutez Maj, Ctrl ou Alt, ou choisissez une autre touche.";
+        if ((h.Modifiers & (KeyModifiers.Ctrl | KeyModifiers.Alt | KeyModifiers.Meta)) == 0)
+            return "Un raccourci global doit contenir Ctrl, Alt ou Win.";
         // Ctrl+Alt+flèches fait pivoter l'écran avec certains pilotes graphiques.
         if (h.Modifiers.HasFlag(KeyModifiers.Ctrl) && h.Modifiers.HasFlag(KeyModifiers.Alt) && h.Key.IsArrow())
             return "Ctrl + Alt + flèche est réservé à la rotation de l'écran par certains pilotes.";

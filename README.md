@@ -44,7 +44,7 @@ Si l'icône n'est pas visible, cliquez sur la flèche « ^ » de la zone de noti
 
 **Conflits signalés en rouge :**
 - deux actions sur la même combinaison ;
-- combinaison sans Ctrl, Alt ou Win (les touches **F1 à F24** sont acceptées seules, sauf F12, réservée par Windows) ;
+- combinaison sans Ctrl, Alt ou Win ;
 - combinaison déjà prise par une autre application ;
 - **Ctrl + Alt + flèches**, refusé parce que certains pilotes graphiques s'en servent pour faire pivoter l'écran.
 
