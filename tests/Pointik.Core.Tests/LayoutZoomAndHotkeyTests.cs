@@ -160,6 +160,14 @@ public class LayoutZoomAndHotkeyTests
         Assert.NotNull(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.Up)));
         Assert.NotNull(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.Shift, KeyId.A)));
         Assert.Null(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.Ctrl | KeyModifiers.Alt, KeyId.Z)));
+
+        // Touches de fonction seules : acceptées, sauf F12 (réservée par Windows).
+        Assert.Null(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.None, KeyId.F9)));
+        Assert.Null(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.Shift, KeyId.F1)));
+        Assert.Null(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.None, KeyId.F24)));
+        Assert.NotNull(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.None, KeyId.F12)));
+        Assert.Null(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.Shift, KeyId.F12)));
+        Assert.NotNull(HotkeyConflicts.Validate(new Hotkey(KeyModifiers.None, KeyId.P)));
     }
 
     [Fact]
