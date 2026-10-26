@@ -1,0 +1,340 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="using:Pointik.UI.Settings"
+        xmlns:p="using:Pointik.Core.Platform"
+        x:Class="Pointik.UI.Settings.SettingsWindow"
+        x:DataType="s:SettingsViewModel"
+        Title="Pointik — Réglages"
+        Width="920" Height="720" MinWidth="780" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://Pointik.UI/Assets/Pointik.ico">
+
+  <Window.Styles>
+    <!-- Ligne de formulaire : libellé à gauche, contrôle à droite -->
+    <Style Selector="Grid.row">
+      <Setter Property="Margin" Value="0,5" />
+      <Setter Property="MinHeight" Value="34" />
+    </Style>
+    <Style Selector="Grid.row > TextBlock:nth-child(1)">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Opacity" Value="0.85" />
+    </Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,14,0,4" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Slider">
+      <Setter Property="Width" Value="260" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="StackPanel.value">
+      <Setter Property="Orientation" Value="Horizontal" />
+      <Setter Property="Spacing" Value="12" />
+      <Setter Property="Grid.Column" Value="1" />
+    </Style>
+    <Style Selector="StackPanel.value > TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="MinWidth" Value="60" />
+    </Style>
+    <Style Selector="ScrollViewer.page > StackPanel">
+      <Setter Property="Margin" Value="24,8,24,24" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <!-- Barre d'état -->
+    <Border DockPanel.Dock="Bottom" Padding="20,10" BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Content="Fermer" Click="OnClose" MinWidth="90" HorizontalContentAlignment="Center" />
+        <TextBlock Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" Opacity="0.8" />
+      </DockPanel>
+    </Border>
+
+    <TabControl x:Name="Tabs" Padding="0" Margin="8,4,8,0">
+
+      <!-- ============================================================ Curseur -->
+      <TabItem Header="Curseur">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <s:CursorPreview x:Name="CursorPreview1" Height="150" Margin="0,8,0,4" />
+            <TextBlock Classes="section" Text="Anneau autour du curseur" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Afficher l'anneau" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding RingEnabled}" OnContent="Activé" OffContent="Désactivé" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Couleur" />
+              <s:ColorField Grid.Column="1" Hex="{Binding RingColor}" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Taille (diamètre)" />
+              <StackPanel Classes="value"><Slider Minimum="20" Maximum="120" Value="{Binding RingSize}" />
+                <TextBlock Text="{Binding RingSize, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Épaisseur" />
+              <StackPanel Classes="value"><Slider Minimum="1" Maximum="16" Value="{Binding RingThickness}" />
+                <TextBlock Text="{Binding RingThickness, StringFormat='{}{0:0.#} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Opacité" />
+              <StackPanel Classes="value"><Slider Minimum="10" Maximum="100" Value="{Binding RingOpacity}" />
+                <TextBlock Text="{Binding RingOpacity, StringFormat='{}{0:0} %'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Effet de pression" />
+              <CheckBox Grid.Column="1" IsChecked="{Binding RingPressEffect}" Content="L'anneau se resserre tant qu'un bouton est maintenu" /></Grid>
+
+            <TextBlock Classes="section" Text="Spot (mode projecteur)" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Afficher le spot" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding SpotEnabled}" OnContent="Activé" OffContent="Désactivé" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Rayon du disque éclairé" />
+              <StackPanel Classes="value"><Slider Minimum="40" Maximum="600" Value="{Binding SpotRadius}" />
+                <TextBlock Text="{Binding SpotRadius, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Assombrissement" />
+              <StackPanel Classes="value"><Slider Minimum="10" Maximum="95" Value="{Binding SpotDimming}" />
+                <TextBlock Text="{Binding SpotDimming, StringFormat='{}{0:0} %'}" /></StackPanel></Grid>
+            <TextBlock Classes="hint" Margin="0,8,0,0"
+                       Text="Ctrl + Alt + M masque ou réaffiche l'anneau et le spot ; Ctrl + Alt + S active ou coupe le spot seul." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ============================================================ Clics -->
+      <TabItem Header="Clics">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <s:CursorPreview x:Name="CursorPreview2" Height="150" Margin="0,8,0,4" />
+            <TextBlock Classes="section" Text="Animation au clic" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Onde au clic" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding ClicksEnabled}" OnContent="Activée" OffContent="Désactivée" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Clic gauche" />
+              <s:ColorField Grid.Column="1" Hex="{Binding LeftColor}" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Clic droit" />
+              <s:ColorField Grid.Column="1" Hex="{Binding RightColor}" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Clic milieu" />
+              <s:ColorField Grid.Column="1" Hex="{Binding MiddleColor}" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Durée de l'onde" />
+              <StackPanel Classes="value"><Slider Minimum="200" Maximum="1500" Value="{Binding ClickDuration}" />
+                <TextBlock Text="{Binding ClickDuration, StringFormat='{}{0:0} ms'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Rayon final" />
+              <StackPanel Classes="value"><Slider Minimum="15" Maximum="150" Value="{Binding ClickRadius}" />
+                <TextBlock Text="{Binding ClickRadius, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Son de clic" />
+              <CheckBox Grid.Column="1" IsChecked="{Binding ClickSound}" Content="Jouer un court son à chaque clic" /></Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ============================================================ Clavier -->
+      <TabItem Header="Clavier">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <s:KeyboardPreview x:Name="KeyboardPreview" Height="210" Margin="0,8,0,4" />
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+              <Button Content="Tester sur l'écran" Command="{Binding TestCommand}" />
+              <Button Content="Placer à la souris…" Click="OnPlace" />
+            </StackPanel>
+
+            <TextBlock Classes="section" Text="Comportement" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Afficher les touches" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding KeyboardEnabled}" OnContent="Activé" OffContent="Désactivé" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Ce qui est affiché" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding KeyboardModeIndex}" MinWidth="320">
+                <ComboBoxItem Content="Raccourcis et touches spéciales uniquement" />
+                <ComboBoxItem Content="Tout afficher (y compris le texte tapé)" />
+              </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Bulles visibles" />
+              <StackPanel Classes="value"><Slider Minimum="1" Maximum="6" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MaxVisible}" />
+                <TextBlock Text="{Binding MaxVisible, StringFormat='{}{0:0}'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Durée d'affichage" />
+              <StackPanel Classes="value"><Slider Minimum="0.5" Maximum="6" Value="{Binding DisplaySeconds}" />
+                <TextBlock Text="{Binding DisplaySeconds, StringFormat='{}{0:0.0} s'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Pause avant d'effacer le texte" />
+              <StackPanel Classes="value"><Slider Minimum="0.5" Maximum="6" Value="{Binding TextPauseSeconds}" />
+                <TextBlock Text="{Binding TextPauseSeconds, StringFormat='{}{0:0.0} s'}" /></StackPanel></Grid>
+
+            <TextBlock Classes="section" Text="Position" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Coin de l'écran" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding CornerIndex}" MinWidth="200">
+                <ComboBoxItem Content="En haut à gauche" />
+                <ComboBoxItem Content="En haut à droite" />
+                <ComboBoxItem Content="En bas à gauche" />
+                <ComboBoxItem Content="En bas à droite" />
+              </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Position libre" />
+              <CheckBox Grid.Column="1" IsChecked="{Binding UseCustomPosition}"
+                        Content="Utiliser la position choisie en mode placement (en % de l'écran)" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Écran" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <ComboBox SelectedIndex="{Binding TargetIndex}" MinWidth="200">
+                  <ComboBoxItem Content="Celui du curseur" />
+                  <ComboBoxItem Content="L'écran principal" />
+                  <ComboBoxItem Content="Un écran choisi" />
+                </ComboBox>
+                <ComboBox ItemsSource="{Binding Screens}" SelectedIndex="{Binding SelectedScreenIndex}" MinWidth="260">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="p:ScreenInfo">
+                      <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Décalage horizontal" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="600" Value="{Binding OffsetX}" />
+                <TextBlock Text="{Binding OffsetX, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Décalage vertical" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="600" Value="{Binding OffsetY}" />
+                <TextBlock Text="{Binding OffsetY, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Alignement" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding AlignmentIndex}" MinWidth="200">
+                <ComboBoxItem Content="À gauche" />
+                <ComboBoxItem Content="Centré" />
+                <ComboBoxItem Content="À droite" />
+              </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Empilement" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding StackIndex}" MinWidth="200">
+                <ComboBoxItem Content="Vers le haut (récente en bas)" />
+                <ComboBoxItem Content="Vers le bas (récente en haut)" />
+              </ComboBox></Grid>
+
+            <TextBlock Classes="section" Text="Style" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Présentation" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding PresentationIndex}" MinWidth="260">
+                <ComboBoxItem Content="Bulle de texte (« Ctrl + Maj + S »)" />
+                <ComboBoxItem Content="Touches de clavier" />
+              </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Police" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <ComboBox ItemsSource="{Binding FontFamilies}" SelectedItem="{Binding FontFamily}" MinWidth="240" MaxDropDownHeight="360" />
+                <CheckBox IsChecked="{Binding Bold}" Content="Gras" />
+              </StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Taille du texte" />
+              <StackPanel Classes="value"><Slider Minimum="10" Maximum="60" Value="{Binding FontSize}" />
+                <TextBlock Text="{Binding FontSize, StringFormat='{}{0:0} pt'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Couleur du texte" />
+              <s:ColorField Grid.Column="1" Hex="{Binding TextColor}" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Couleur du fond" />
+              <s:ColorField Grid.Column="1" Hex="{Binding BackgroundColor}" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Opacité du fond" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="100" Value="{Binding BackgroundOpacity}" />
+                <TextBlock Text="{Binding BackgroundOpacity, StringFormat='{}{0:0} %'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Rayon des coins" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="40" Value="{Binding CornerRadius}" />
+                <TextBlock Text="{Binding CornerRadius, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Bordure" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="8" Value="{Binding BorderThickness}" Width="160" />
+                <TextBlock Text="{Binding BorderThickness, StringFormat='{}{0:0} px'}" />
+                <s:ColorField Hex="{Binding BorderColor}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Ombre" />
+              <CheckBox Grid.Column="1" IsChecked="{Binding Shadow}" Content="Ombre portée sous les bulles" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Marges internes (horiz. / vert.)" />
+              <StackPanel Classes="value">
+                <Slider Minimum="0" Maximum="40" Value="{Binding PaddingHorizontal}" Width="150" />
+                <TextBlock Text="{Binding PaddingHorizontal, StringFormat='{}{0:0} px'}" MinWidth="44" />
+                <Slider Minimum="0" Maximum="30" Value="{Binding PaddingVertical}" Width="150" />
+                <TextBlock Text="{Binding PaddingVertical, StringFormat='{}{0:0} px'}" />
+              </StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Espacement entre bulles" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="40" Value="{Binding Spacing}" />
+                <TextBlock Text="{Binding Spacing, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Échelle globale" />
+              <StackPanel Classes="value"><Slider Minimum="50" Maximum="300" Value="{Binding ScalePercent}" />
+                <TextBlock Text="{Binding ScalePercent, StringFormat='{}{0:0} %'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Animation (entrée / sortie)" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <ComboBox SelectedIndex="{Binding EnterAnimationIndex}" MinWidth="140">
+                  <ComboBoxItem Content="Fondu" /><ComboBoxItem Content="Glissement" /><ComboBoxItem Content="Aucune" />
+                </ComboBox>
+                <ComboBox SelectedIndex="{Binding ExitAnimationIndex}" MinWidth="140">
+                  <ComboBoxItem Content="Fondu" /><ComboBoxItem Content="Glissement" /><ComboBoxItem Content="Aucune" />
+                </ComboBox>
+              </StackPanel></Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ============================================================ Thèmes -->
+      <TabItem Header="Thèmes">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <s:KeyboardPreview x:Name="ThemePreview" Height="210" Margin="0,8,0,4" />
+            <TextBlock Classes="section" Text="Thèmes du clavier" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Thème" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <ComboBox ItemsSource="{Binding ThemeNames}" SelectedItem="{Binding SelectedTheme}" MinWidth="240" />
+                <Button Content="Appliquer" Command="{Binding ApplyThemeCommand}" />
+                <Button Content="Supprimer" Command="{Binding DeleteThemeCommand}" IsEnabled="{Binding CanDeleteTheme}" />
+              </StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Enregistrer le style actuel" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBox Text="{Binding NewThemeName}" Watermark="Nom du thème" MinWidth="240" />
+                <Button Content="Enregistrer comme thème" Command="{Binding SaveThemeCommand}" />
+              </StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Fichier JSON" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="Importer un thème…" Click="OnImportTheme" />
+                <Button Content="Exporter le thème sélectionné…" Click="OnExportTheme" />
+              </StackPanel></Grid>
+            <TextBlock Classes="hint" Margin="0,8,0,0"
+                       Text="Les thèmes prédéfinis (Sombre, Clair, Contraste élevé, Discret, Touches) ne peuvent pas être modifiés : appliquez-en un, retouchez-le dans l'onglet Clavier, puis enregistrez-le sous un nouveau nom." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ============================================================ Zoom -->
+      <TabItem Header="Zoom">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <TextBlock Classes="section" Text="Zoom d'écran" />
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Zoom" />
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding ZoomEnabled}" OnContent="Activé" OffContent="Désactivé" /></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Niveau" />
+              <StackPanel Classes="value"><Slider Minimum="1.5" Maximum="8" Value="{Binding ZoomLevel}" />
+                <TextBlock Text="{Binding ZoomLevel, StringFormat='{}{0:0.##} ×'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Suivi du curseur" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding ZoomFollowIndex}" MinWidth="320">
+                <ComboBoxItem Content="Centré sur le curseur" />
+                <ComboBoxItem Content="Le cadre bouge quand le curseur approche du bord" />
+              </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Activation" />
+              <ComboBox Grid.Column="1" SelectedIndex="{Binding ZoomActivationIndex}" MinWidth="320">
+                <ComboBoxItem Content="Bascule : le raccourci active puis désactive" />
+                <ComboBoxItem Content="Maintenir le raccourci pour zoomer" />
+              </ComboBox></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Durée des transitions" />
+              <StackPanel Classes="value"><Slider Minimum="0" Maximum="600" Value="{Binding ZoomTransition}" />
+                <TextBlock Text="{Binding ZoomTransition, StringFormat='{}{0:0} ms'}" /></StackPanel></Grid>
+            <TextBlock Classes="hint" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Text="Ctrl + Alt + Z active ou quitte le zoom, Échap le quitte aussi. Pendant le zoom, Ctrl + Alt + molette ajuste le niveau. Le zoom est toujours remis à 1× à la fermeture de Pointik." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ============================================================ Raccourcis -->
+      <TabItem Header="Raccourcis">
+        <ScrollViewer Classes="page">
+          <StackPanel>
+            <TextBlock Classes="section" Text="Raccourcis globaux" />
+            <TextBlock Classes="hint" Margin="0,0,0,8"
+                       Text="Cliquez sur un raccourci puis appuyez sur la nouvelle combinaison (avec Ctrl, Alt ou Win). Échap annule. Les conflits sont signalés en rouge." />
+            <ItemsControl ItemsSource="{Binding Hotkeys}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="s:HotkeyRowViewModel">
+                  <Grid Classes="row" ColumnDefinitions="230,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Text="{Binding Label}" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                      <Button Content="{Binding ButtonText}" Command="{Binding CaptureCommand}" MinWidth="220" />
+                      <Button Content="Aucun" Command="{Binding ClearCommand}" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Error}" IsVisible="{Binding HasError}"
+                               Foreground="#E5484D" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Content="Rétablir les raccourcis par défaut" Command="{Binding ResetHotkeysCommand}" Margin="0,12,0,0" />
+            <TextBlock Classes="hint" Margin="0,10,0,0"
+                       Text="Ctrl + Alt + flèches n'est pas autorisé : certains pilotes graphiques s'en servent pour faire pivoter l'écran." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

@@ -151,6 +151,31 @@ public sealed class AppController
         StateChanged?.Invoke();
     }
 
+    /// <summary>Applique une modification faite dans la fenêtre de réglages (aperçu en direct).</summary>
+    public void ApplySettingsChange() => Change(() => { });
+
+    /// <summary>Écrans disponibles.</summary>
+    public IReadOnlyList<ScreenInfo> Screens => _platform.Screens.GetScreens();
+
+    /// <summary>Services d'écran et de fenêtres (mode placement, notifications).</summary>
+    public IScreenService ScreenService => _platform.Screens;
+    public IOverlayWindowHost OverlayHost => _platform.OverlayHost;
+
+    /// <summary>Affiche des bulles d'exemple sur l'écran cible (bouton « Tester »).</summary>
+    public void TestKeyboard()
+    {
+        if (_overlays is null) return;
+        var now = AppClock.Now;
+        var n = _keyboard.Names;
+        _keyboard.Clear();
+        _keyboard.AddShortcut(n.GetParts(KeyModifiers.Ctrl, KeyId.C), now);
+        _keyboard.AddShortcut(n.GetParts(KeyModifiers.Ctrl | KeyModifiers.Shift, KeyId.S), now);
+        _keyboard.AddShortcut(n.GetParts(KeyModifiers.Alt, KeyId.Tab), now);
+        Scene.KeyboardScreenId = ResolveKeyboardScreen().Id;
+        _overlays.InvalidateAll();
+        _ticker.Ensure();
+    }
+
     /// <summary>Enregistre les réglages (différé).</summary>
     public void SaveSettings()
     {
@@ -175,18 +200,27 @@ public sealed class AppController
 
     // ------------------------------------------------------------------ Raccourcis globaux
 
-    /// <summary>Enregistre tous les raccourcis. Retourne les erreurs par action (raccourci refusé par l'OS).</summary>
-    public IReadOnlyDictionary<HotkeyAction, string> RegisterHotkeys()
+    /// <summary>Raccourcis refusés par l'OS lors du dernier enregistrement.</summary>
+    public IReadOnlyDictionary<HotkeyAction, string> HotkeyErrors { get; private set; } = new Dictionary<HotkeyAction, string>();
+
+    /// <summary>
+    /// Enregistre tous les raccourcis. Retourne les erreurs par action (raccourci refusé par l'OS).
+    /// Les raccourcis en conflit interne (doublon, combinaison interdite) ne sont pas enregistrés.
+    /// </summary>
+    public IReadOnlyDictionary<HotkeyAction, string> RegisterHotkeys(bool notify = true)
     {
         var errors = new Dictionary<HotkeyAction, string>();
+        var conflicts = HotkeyConflicts.Find(Settings.Hotkeys);
         _platform.Hotkeys.UnregisterAll();
         foreach (var action in Enum.GetValues<HotkeyAction>())
         {
+            if (conflicts.ContainsKey(action)) continue;
             var hotkey = Settings.Hotkeys.Get(action);
             if (!_platform.Hotkeys.TryRegister(action, hotkey, out var error))
                 errors[action] = error ?? "Raccourci refusé.";
         }
-        if (errors.Count > 0)
+        HotkeyErrors = errors;
+        if (errors.Count > 0 && notify)
         {
             var list = string.Join(", ", errors.Keys.Select(a => _keyboard.Names.Format(Settings.Hotkeys.Get(a))));
             _env.Log.Warning($"Raccourcis non enregistrés : {list}");
@@ -194,6 +228,9 @@ public sealed class AppController
         }
         return errors;
     }
+
+    /// <summary>Suspend les raccourcis globaux (capture d'un nouveau raccourci dans les réglages).</summary>
+    public void SuspendHotkeys() => _platform.Hotkeys.UnregisterAll();
 
     private void OnHotkey(HotkeyAction action)
     {

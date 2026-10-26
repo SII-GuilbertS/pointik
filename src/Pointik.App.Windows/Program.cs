@@ -12,14 +12,25 @@ internal static class Program
     /// <summary>Nom du mutex d'instance unique (portée : session utilisateur).</summary>
     private const string MutexName = @"Local\Pointik.Instance.7C2E41";
 
+    /// <summary>Signal envoyé par une seconde instance : la première ouvre ses réglages.</summary>
+    private const string ShowEventName = @"Local\Pointik.ShowSettings.7C2E41";
+
     private static readonly ErrorLog Log = new();
 
     [STAThread]
     private static int Main(string[] args)
     {
         using var mutex = new Mutex(initiallyOwned: true, MutexName, out var isFirstInstance);
+        using var showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
         if (!isFirstInstance)
+        {
+            // Pointik tourne déjà : on lui demande d'ouvrir ses réglages, puis on quitte.
+            showEvent.Set();
             return 0;
+        }
+        var wait = ThreadPool.RegisterWaitForSingleObject(showEvent, (_, _) =>
+            Dispatcher.UIThread.Post(() => (Application.Current as PointikApp)?.Shell?.OpenSettings()),
+            null, Timeout.Infinite, executeOnlyOnce: false);
 
         InstallGlobalHandlers();
         try
@@ -34,6 +45,7 @@ internal static class Program
         }
         finally
         {
+            wait.Unregister(null);
             // Sécurité critique : l'écran ne doit jamais rester zoomé.
             WindowsPlatform.EmergencyResetZoom();
         }

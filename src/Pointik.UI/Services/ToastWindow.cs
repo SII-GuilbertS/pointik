@@ -83,7 +83,19 @@ public sealed class ToastWindow : Window
         base.OnOpened(e);
         var handle = TryGetPlatformHandle()?.Handle ?? 0;
         _host.ConfigureFloatingTool(handle);
-        // Placement en bas à droite de la zone de travail, une fois la taille connue.
+        Reposition();
+    }
+
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        Reposition();
+    }
+
+    /// <summary>Placement en bas à droite de la zone de travail, dès que la taille est connue.</summary>
+    private void Reposition()
+    {
+        if (Bounds.Width <= 0) return;
         var scale = RenderScaling;
         var w = Bounds.Width * scale;
         var h = Bounds.Height * scale;

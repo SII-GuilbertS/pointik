@@ -28,6 +28,9 @@ public partial class PointikApp : Application
     /// <summary>Contrôleur actif (null avant le démarrage).</summary>
     public AppController? Controller { get; private set; }
 
+    /// <summary>Icône de notification et fenêtres (null avant le démarrage).</summary>
+    public Shell? Shell { get; private set; }
+
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
@@ -38,8 +41,14 @@ public partial class PointikApp : Application
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             var platform = _platformFactory(new AvaloniaUiDispatcher());
             Controller = new AppController(platform, _environment, desktop);
-            desktop.Exit += (_, _) => Controller.Shutdown();
+            desktop.Exit += (_, _) =>
+            {
+                Shell?.Dispose();
+                Controller.Shutdown();
+            };
             Controller.Start();
+            Shell = new Shell(this, Controller);
+            if (_environment.Arguments.Contains("--reglages")) Shell.OpenSettings();
         }
         base.OnFrameworkInitializationCompleted();
     }
