@@ -54,7 +54,13 @@ internal static class Program
         };
         return AppBuilder.Configure(() => new PointikApp(WindowsPlatform.Create, env))
             .UsePlatformDetect()
-            .With(new Win32PlatformOptions())
+            .With(new Win32PlatformOptions
+            {
+                // Composition par surface de redirection : mesurée à ~0,5 % d'un cœur au repos,
+                // contre 4 à 5 % en composition WinUI/DirectComposition (minuterie calée sur la
+                // synchro verticale qui tourne en permanence). La transparence par pixel est conservée.
+                CompositionMode = [Win32CompositionMode.RedirectionSurface],
+            })
             .AfterSetup(_ => Dispatcher.UIThread.UnhandledException += (_, e) =>
             {
                 Log.Error("Exception sur le thread UI", e.Exception);

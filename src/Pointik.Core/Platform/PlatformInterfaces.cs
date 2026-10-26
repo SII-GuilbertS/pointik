@@ -89,6 +89,12 @@ public interface IOverlayWindowHost
 
     /// <summary>Remet la fenêtre au sommet de la pile des fenêtres « toujours au premier plan ».</summary>
     void BringToFront(nint windowHandle);
+
+    /// <summary>
+    /// Une autre fenêtre a pu passer devant les overlays (changement de fenêtre active) :
+    /// déclenché sur le thread UI pour que les overlays reprennent le dessus.
+    /// </summary>
+    event Action? StackingMayHaveChanged;
 }
 
 /// <summary>

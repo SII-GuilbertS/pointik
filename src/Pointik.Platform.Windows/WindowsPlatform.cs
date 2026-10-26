@@ -20,11 +20,11 @@ public static class WindowsPlatform
             InputHook = new WindowsInputHook(thread, ui),
             KeyTranslator = new PendingKeyTranslator(),
             Screens = new WindowsScreenService(thread, ui),
-            OverlayHost = new WindowsOverlayWindowHost(),
+            OverlayHost = new WindowsOverlayWindowHost(thread, ui),
             Zoom = zoom,
             Hotkeys = new PendingHotkeyService(),
             Autostart = new PendingAutostart(),
-            Sound = new PendingSound(),
+            Sound = new WindowsSoundPlayer(),
             DisposeExtra = () =>
             {
                 s_thread = null;
@@ -73,10 +73,5 @@ public static class WindowsPlatform
         public bool IsEnabled => false;
         public bool TryEnable(string executablePath, out string? error) { error = null; return false; }
         public bool TryDisable(out string? error) { error = null; return true; }
-    }
-
-    private sealed class PendingSound : ISoundPlayer
-    {
-        public void PlayClick(MouseButton button) { }
     }
 }

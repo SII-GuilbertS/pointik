@@ -1,5 +1,6 @@
 using Pointik.Core.Geometry;
 using Pointik.Core.Platform;
+using Pointik.Core.Settings;
 
 namespace Pointik.UI.Overlay;
 
@@ -10,14 +11,16 @@ public sealed class OverlayManager : IDisposable
     private readonly IOverlayWindowHost _host;
     private readonly List<OverlayWindow> _windows = new();
 
-    public OverlayManager(IScreenService screens, IOverlayWindowHost host)
+    public OverlayManager(IScreenService screens, IOverlayWindowHost host, AppSettings settings)
     {
         _screens = screens;
         _host = host;
+        Scene = new OverlayScene(settings);
         _screens.ScreensChanged += Rebuild;
+        _host.StackingMayHaveChanged += BringAllToFront;
     }
 
-    public OverlayScene Scene { get; } = new();
+    public OverlayScene Scene { get; }
 
     public IReadOnlyList<OverlayWindow> Windows => _windows;
 
@@ -55,6 +58,14 @@ public sealed class OverlayManager : IDisposable
                 w.Surface.InvalidateVisual();
     }
 
+    /// <summary>Redessine les écrans touchés par un effet de rayon donné (pixels logiques) autour d'un point.</summary>
+    public void InvalidateNear(ScreenPoint p, double logicalRadius)
+    {
+        foreach (var w in _windows)
+            if (w.Surface.IsNear(p, logicalRadius))
+                w.Surface.InvalidateVisual();
+    }
+
     /// <summary>Redessine tous les écrans.</summary>
     public void InvalidateAll()
     {
@@ -70,6 +81,7 @@ public sealed class OverlayManager : IDisposable
     public void Dispose()
     {
         _screens.ScreensChanged -= Rebuild;
+        _host.StackingMayHaveChanged -= BringAllToFront;
         foreach (var w in _windows) w.Close();
         _windows.Clear();
     }

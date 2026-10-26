@@ -2,7 +2,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Pointik.Core.Geometry;
+using Pointik.Core.Graphics;
+using Pointik.Core.Input;
 using Pointik.Core.Platform;
+using Pointik.UI.Services;
 
 namespace Pointik.UI.Overlay;
 
@@ -12,6 +15,7 @@ namespace Pointik.UI.Overlay;
 /// </summary>
 public sealed class OverlaySurface : Control
 {
+    private static readonly Color ShadowColor = Color.FromArgb(255, 0, 0, 0);
     private readonly OverlayScene _scene;
 
     public OverlaySurface(OverlayScene scene, ScreenInfo screen)
@@ -19,7 +23,7 @@ public sealed class OverlaySurface : Control
         _scene = scene;
         Screen = screen;
         IsHitTestVisible = false;
-        ClipToBounds = false;
+        ClipToBounds = true;
     }
 
     public ScreenInfo Screen { get; set; }
@@ -34,12 +38,89 @@ public sealed class OverlaySurface : Control
         return new Point((p.X - Screen.Bounds.X) / s, (p.Y - Screen.Bounds.Y) / s);
     }
 
+    /// <summary>Indique si un effet de rayon donné (pixels logiques) autour d'un point touche cet écran.</summary>
+    public bool IsNear(ScreenPoint p, double logicalRadius)
+    {
+        var r = logicalRadius * Screen.Scale;
+        return Screen.Bounds.DistanceSquaredTo(p) <= r * r;
+    }
+
     public override void Render(DrawingContext context)
     {
-        if (_scene.ShowCursorMarker && Screen.Bounds.Contains(_scene.Cursor))
+        var now = AppClock.Now;
+        var settings = _scene.Settings;
+        // Compensation du zoom : 1 sans zoom (complétée à l'étape du zoom).
+        const double compensation = 1.0;
+
+        if (_scene.SpotVisible)
+            DrawSpot(context, settings.Spot.Radius * compensation, settings.Spot.Dimming);
+
+        if (settings.Clicks.Enabled)
+            DrawRipples(context, now, compensation);
+
+        if (_scene.RingVisible && IsNear(_scene.Cursor, _scene.CursorEffectsRadius))
+            DrawRing(context, now, compensation);
+    }
+
+    private void DrawSpot(DrawingContext context, double radius, double dimming)
+    {
+        var dim = Color.FromArgb((byte)Math.Round(dimming * 255), 0, 0, 0);
+        var rect = new Rect(Bounds.Size);
+        if (!IsNear(_scene.Cursor, radius))
         {
-            var c = ToLocal(_scene.Cursor);
-            context.DrawEllipse(null, new Pen(new SolidColorBrush(Color.FromArgb(220, 255, 196, 31)), 4), c, 27, 27);
+            // Écran sans le curseur : entièrement assombri.
+            context.FillRectangle(new SolidColorBrush(dim), rect);
+            return;
+        }
+        var c = ToLocal(_scene.Cursor);
+        // Dégradé radial : disque clair au centre, bord adouci sur les 12 derniers pour cent.
+        var brush = new RadialGradientBrush
+        {
+            Center = new RelativePoint(c, RelativeUnit.Absolute),
+            GradientOrigin = new RelativePoint(c, RelativeUnit.Absolute),
+            RadiusX = new RelativeScalar(radius, RelativeUnit.Absolute),
+            RadiusY = new RelativeScalar(radius, RelativeUnit.Absolute),
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb(0, 0, 0, 0), 0),
+                new GradientStop(Color.FromArgb(0, 0, 0, 0), 0.88),
+                new GradientStop(dim, 1),
+            },
+        };
+        context.FillRectangle(brush, rect);
+    }
+
+    private void DrawRipples(DrawingContext context, TimeSpan now, double compensation)
+    {
+        var clicks = _scene.Settings.Clicks;
+        var startRadius = Math.Max(4, _scene.Settings.Ring.Size * 0.15);
+        var ripples = _scene.Clicks.GetRipples(now, _scene.RippleDuration, startRadius, clicks.MaxRadius);
+        foreach (var r in ripples)
+        {
+            if (!IsNear(r.Origin, r.Radius + r.StrokeThickness)) continue;
+            var color = clicks.ColorFor(r.Button);
+            var c = ToLocal(r.Origin);
+            var radius = r.Radius * compensation;
+            if (r.FillOpacity > 0.01)
+                context.DrawEllipse(Brush(color, r.FillOpacity), null, c, radius, radius);
+            var pen = new Pen(Brush(color, r.Opacity), r.StrokeThickness * compensation);
+            context.DrawEllipse(null, pen, c, radius, radius);
         }
     }
+
+    private void DrawRing(DrawingContext context, TimeSpan now, double compensation)
+    {
+        var ring = _scene.Settings.Ring;
+        var scale = ring.PressEffect ? _scene.Clicks.GetRingScale(now) : 1;
+        var radius = ring.Size / 2 * scale * compensation;
+        var thickness = ring.Thickness * compensation;
+        var c = ToLocal(_scene.Cursor);
+        // Liseré sombre discret sous l'anneau : reste visible sur fond clair comme sur fond foncé.
+        var shadow = new Pen(new SolidColorBrush(ShadowColor, 0.22 * ring.Opacity), thickness + 2 * compensation);
+        context.DrawEllipse(null, shadow, c, radius, radius);
+        context.DrawEllipse(null, new Pen(Brush(ring.Color, ring.Opacity), thickness), c, radius, radius);
+    }
+
+    private static IBrush Brush(ArgbColor color, double opacity) =>
+        new SolidColorBrush(Color.FromArgb(255, color.R, color.G, color.B), Math.Clamp(opacity, 0, 1) * color.Opacity);
 }

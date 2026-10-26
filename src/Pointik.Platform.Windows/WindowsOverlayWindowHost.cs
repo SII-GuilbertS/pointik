@@ -1,5 +1,6 @@
 using Pointik.Core.Geometry;
 using Pointik.Core.Platform;
+using Pointik.Platform.Windows.Interop;
 using static Pointik.Platform.Windows.Interop.Native;
 
 namespace Pointik.Platform.Windows;
@@ -7,6 +8,34 @@ namespace Pointik.Platform.Windows;
 /// <summary>Applique les styles étendus Win32 aux fenêtres créées par Avalonia.</summary>
 internal sealed class WindowsOverlayWindowHost : IOverlayWindowHost
 {
+    // Référence statique : le delegate du hook WinEvent ne doit pas être collecté.
+    private static WinEventProc? s_foregroundProc;
+    private readonly IUiDispatcher _ui;
+    private int _pending;
+
+    public WindowsOverlayWindowHost(Win32MessageThread thread, IUiDispatcher ui)
+    {
+        _ui = ui;
+        s_foregroundProc ??= OnForegroundChanged;
+        // Hook hors contexte sur le thread Win32 : aucune DLL injectée dans les autres processus.
+        thread.Invoke(() => SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0,
+            s_foregroundProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS));
+    }
+
+    public event Action? StackingMayHaveChanged;
+
+    private void OnForegroundChanged(nint hook, uint type, nint hwnd, int obj, int child, uint thread, uint time)
+    {
+        if (Interlocked.Exchange(ref _pending, 1) == 0)
+        {
+            _ui.Post(() =>
+            {
+                Interlocked.Exchange(ref _pending, 0);
+                StackingMayHaveChanged?.Invoke();
+            });
+        }
+    }
+
     public void ConfigureOverlay(nint windowHandle)
     {
         if (windowHandle == 0) return;
