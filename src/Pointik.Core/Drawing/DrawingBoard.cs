@@ -12,6 +12,36 @@ public enum DrawingTool
     Ellipse,
     /// <summary>Ligne libre (main levée).</summary>
     Freehand,
+    /// <summary>Flèche du point de départ vers la pointe (angle multiple de 45° avec Maj).</summary>
+    Arrow,
+}
+
+/// <summary>Géométrie d'une flèche : pointe pleine proportionnelle à l'épaisseur du trait.</summary>
+public readonly record struct ArrowShape(ScreenPoint Tail, ScreenPoint ShaftEnd, ScreenPoint Tip, ScreenPoint WingLeft, ScreenPoint WingRight)
+{
+    /// <summary>Demi-angle d'ouverture de la pointe.</summary>
+    public const double HeadHalfAngleDegrees = 28;
+
+    /// <summary>Calcule la flèche de <paramref name="tail"/> vers <paramref name="tip"/>.</summary>
+    public static ArrowShape Compute(ScreenPoint tail, ScreenPoint tip, double thickness)
+    {
+        var dx = tip.X - tail.X;
+        var dy = tip.Y - tail.Y;
+        var length = Math.Sqrt(dx * dx + dy * dy);
+        if (length < 1e-6) return new ArrowShape(tail, tip, tip, tip, tip);
+        var ux = dx / length;
+        var uy = dy / length;
+        // Pointe : au moins 14 px, plus grande pour un trait épais, jamais plus de la moitié de la flèche.
+        var headLength = Math.Min(Math.Max(14, thickness * 3.6), length * 0.5);
+        var halfWidth = headLength * Math.Tan(HeadHalfAngleDegrees * Math.PI / 180);
+        var baseX = tip.X - ux * headLength;
+        var baseY = tip.Y - uy * headLength;
+        // Le trait s'arrête un peu avant la base pour que son extrémité arrondie ne dépasse pas de la pointe.
+        var shaftEnd = new ScreenPoint(tip.X - ux * headLength * 0.8, tip.Y - uy * headLength * 0.8);
+        return new ArrowShape(tail, shaftEnd, tip,
+            new ScreenPoint(baseX + uy * halfWidth, baseY - ux * halfWidth),
+            new ScreenPoint(baseX - uy * halfWidth, baseY + ux * halfWidth));
+    }
 }
 
 /// <summary>Une forme dessinée. Les coordonnées sont locales à la surface de dessin.</summary>
@@ -60,6 +90,9 @@ public sealed class DrawingBoard
     /// <summary>Taille en dessous de laquelle un cadre ou un ovale est considéré comme un clic accidentel.</summary>
     public const double MinShapeSize = 3;
 
+    /// <summary>Longueur en dessous de laquelle une flèche est considérée comme un clic accidentel.</summary>
+    public const double MinArrowLength = 8;
+
     private readonly List<Annotation> _shapes = new();
 
     /// <summary>Formes terminées, de la plus ancienne à la plus récente.</summary>
@@ -85,7 +118,9 @@ public sealed class DrawingBoard
             c.End = p;
             return;
         }
-        c.End = constrain ? Constrain(c.Start, p) : p;
+        c.End = !constrain ? p
+            : c.Tool == DrawingTool.Arrow ? SnapAngle(c.Start, p)
+            : Constrain(c.Start, p);
     }
 
     /// <summary>Termine la forme en cours. Retourne false si elle était trop petite (ignorée).</summary>
@@ -95,9 +130,12 @@ public sealed class DrawingBoard
         if (c is null) return false;
         Extend(p, constrain);
         Current = null;
-        var keep = c.Tool == DrawingTool.Freehand
-            ? c.Points.Count >= 2 || c.Start.DistanceTo(c.End) > 0
-            : c.Bounds.Width >= MinShapeSize || c.Bounds.Height >= MinShapeSize;
+        var keep = c.Tool switch
+        {
+            DrawingTool.Freehand => c.Points.Count >= 2 || c.Start.DistanceTo(c.End) > 0,
+            DrawingTool.Arrow => c.Start.DistanceTo(c.End) >= MinArrowLength,
+            _ => c.Bounds.Width >= MinShapeSize || c.Bounds.Height >= MinShapeSize,
+        };
         if (keep) _shapes.Add(c);
         return keep;
     }
@@ -123,6 +161,17 @@ public sealed class DrawingBoard
     /// <summary>Rectangle aux dimensions positives à partir de deux coins opposés.</summary>
     public static ScreenRect NormalizedRect(ScreenPoint a, ScreenPoint b) =>
         new(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Abs(b.X - a.X), Math.Abs(b.Y - a.Y));
+
+    /// <summary>Extrémité contrainte à un angle multiple de 45° (horizontal, vertical, diagonales), même longueur.</summary>
+    public static ScreenPoint SnapAngle(ScreenPoint start, ScreenPoint p)
+    {
+        var dx = p.X - start.X;
+        var dy = p.Y - start.Y;
+        var length = Math.Sqrt(dx * dx + dy * dy);
+        var step = Math.PI / 4;
+        var angle = Math.Round(Math.Atan2(dy, dx) / step) * step;
+        return new ScreenPoint(start.X + Math.Cos(angle) * length, start.Y + Math.Sin(angle) * length);
+    }
 
     /// <summary>Coin opposé contraint pour obtenir un carré (ou un cercle), dans la direction du tracé.</summary>
     public static ScreenPoint Constrain(ScreenPoint start, ScreenPoint p)

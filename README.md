@@ -6,7 +6,7 @@ Pointik met en valeur la souris et le clavier pendant les cours, les présentati
 - un **spot** (mode projecteur) qui assombrit l'écran sauf autour du curseur ;
 - une **onde** à chaque clic ;
 - un **zoom d'écran** en direct ;
-- le **dessin à l'écran** : cadres, ovales, lignes libres ;
+- le **dessin à l'écran** : cadres, ovales, flèches, lignes libres ;
 - les **touches du clavier** à l'écran.
 
 Logiciel gratuit, en français, pour Windows 10 (version 2004 et plus) et Windows 11.
@@ -59,8 +59,8 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Action | Souris ou touche |
 |---|---|
 | Tracer | Glisser avec le bouton gauche |
-| Cadre / Ovale / Main levée | Boutons de la barre, ou **C** / **O** / **L** |
-| Carré ou cercle | Maintenir **Maj** pendant le tracé |
+| Cadre / Ovale / Flèche / Main levée | Boutons de la barre, ou **C** / **O** / **F** / **L** |
+| Carré, cercle, flèche à 45° | Maintenir **Maj** pendant le tracé |
 | Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre |
 | Annuler la dernière forme | **Ctrl + Z** |
 | Tout effacer | **Suppr** |

@@ -355,3 +355,42 @@ public class ScrollIndicatorTests
         Assert.False(s.IsActive(Ms(2000)));
     }
 }
+
+public class ArrowTests
+{
+    private static readonly Graphics.ArgbColor Red = Graphics.ArgbColor.Parse("#E52B2B");
+
+    [Fact]
+    public void Arrow_head_points_at_the_tip_and_is_symmetric()
+    {
+        var a = Drawing.ArrowShape.Compute(new ScreenPoint(0, 0), new ScreenPoint(100, 0), 6);
+        Assert.Equal(new ScreenPoint(100, 0), a.Tip);
+        Assert.True(a.WingLeft.X < 100 && a.WingRight.X < 100);
+        Assert.Equal(-a.WingLeft.Y, a.WingRight.Y, 6);
+        Assert.True(a.ShaftEnd.X > a.WingLeft.X && a.ShaftEnd.X < 100); // le trait s'arrête dans la pointe
+    }
+
+    [Fact]
+    public void Head_never_exceeds_half_of_a_short_arrow()
+    {
+        var a = Drawing.ArrowShape.Compute(new ScreenPoint(0, 0), new ScreenPoint(20, 0), 12);
+        Assert.True(a.WingLeft.X >= 10 - 1e-9);
+    }
+
+    [Fact]
+    public void Shift_snaps_arrows_to_45_degrees_and_tiny_arrows_are_ignored()
+    {
+        var snapped = Drawing.DrawingBoard.SnapAngle(new ScreenPoint(0, 0), new ScreenPoint(100, 12));
+        Assert.Equal(0, snapped.Y, 6);
+        Assert.Equal(Math.Sqrt(100 * 100 + 12 * 12), snapped.X, 6);
+        var diagonal = Drawing.DrawingBoard.SnapAngle(new ScreenPoint(0, 0), new ScreenPoint(50, -45));
+        Assert.Equal(-diagonal.X, diagonal.Y, 6);
+
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Arrow, Red, 6, new ScreenPoint(10, 10));
+        Assert.False(board.End(new ScreenPoint(13, 12), false));
+        board.Begin(Drawing.DrawingTool.Arrow, Red, 6, new ScreenPoint(10, 10));
+        Assert.True(board.End(new ScreenPoint(200, 30), true));
+        Assert.Equal(10, board.Shapes[0].End.Y, 6);
+    }
+}

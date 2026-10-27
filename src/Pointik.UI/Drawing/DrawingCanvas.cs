@@ -92,6 +92,22 @@ public sealed class DrawingCanvas : Control
                 ctx.DrawEllipse(null, pen, new Point(r.Center.X, r.Center.Y), r.Width / 2, r.Height / 2);
                 break;
             }
+            case DrawingTool.Arrow:
+            {
+                var arrow = ArrowShape.Compute(a.Start, a.End, a.Thickness);
+                ctx.DrawLine(pen, ToAvalonia(arrow.Tail), ToAvalonia(arrow.ShaftEnd));
+                var head = new StreamGeometry();
+                using (var g = head.Open())
+                {
+                    g.BeginFigure(ToAvalonia(arrow.Tip), true);
+                    g.LineTo(ToAvalonia(arrow.WingLeft));
+                    g.LineTo(ToAvalonia(arrow.WingRight));
+                    g.EndFigure(true);
+                }
+                // Pointe pleine, aux angles légèrement arrondis par le contour.
+                ctx.DrawGeometry(brush, new Pen(brush, Math.Min(a.Thickness, 4), lineJoin: PenLineJoin.Round), head);
+                break;
+            }
             case DrawingTool.Freehand:
             {
                 if (a.Points.Count == 1)
@@ -114,4 +130,6 @@ public sealed class DrawingCanvas : Control
     }
 
     private static ScreenPoint ToPoint(Point p) => new(p.X, p.Y);
+
+    private static Point ToAvalonia(ScreenPoint p) => new(p.X, p.Y);
 }

@@ -13,7 +13,7 @@ namespace Pointik.UI.Drawing;
 
 /// <summary>
 /// Mode dessin : une fenêtre transparente couvre l'écran du curseur et capte la souris.
-/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, L ligne libre, Maj = carré/cercle,
+/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, Maj = carré/cercle/45°,
 /// Ctrl+Z annuler, Suppr tout effacer, Échap quitter (les dessins sont effacés).
 /// </summary>
 public sealed class DrawingWindow : Window
@@ -93,6 +93,7 @@ public sealed class DrawingWindow : Window
 
         AddTool(bar, DrawingTool.Rectangle, "▭  Cadre", "Cadre (C) — Maj : carré");
         AddTool(bar, DrawingTool.Ellipse, "◯  Ovale", "Ovale (O) — Maj : cercle");
+        AddTool(bar, DrawingTool.Arrow, "➜  Flèche", "Flèche (F) — Maj : angle de 45°");
         AddTool(bar, DrawingTool.Freehand, "✎  Main levée", "Ligne libre (L)");
         bar.Children.Add(Separator());
 
@@ -251,6 +252,9 @@ public sealed class DrawingWindow : Window
                 break;
             case Key.O when !ctrl:
                 SetTool(DrawingTool.Ellipse);
+                break;
+            case Key.F when !ctrl:
+                SetTool(DrawingTool.Arrow);
                 break;
             case Key.L when !ctrl:
                 SetTool(DrawingTool.Freehand);
