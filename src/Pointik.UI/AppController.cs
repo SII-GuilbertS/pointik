@@ -458,6 +458,8 @@ public sealed class AppController
             case MouseEventKind.Move:
                 var previous = scene.Cursor;
                 scene.Cursor = e.Position;
+                // Les chevrons de molette suivent le curseur pendant leur courte vie.
+                if (scene.Scroll.IsActive(now)) scene.Scroll.MoveTo(e.Position);
                 if (_zoom.IsEngaged)
                 {
                     if (_zoom.Update(e.Position, now)) _ticker.Ensure();
@@ -488,6 +490,12 @@ public sealed class AppController
                 break;
 
             case MouseEventKind.Wheel:
+                if (Settings.Clicks.Enabled && Settings.Clicks.ShowScroll)
+                {
+                    scene.Scroll.AddNotch(e.Position, e.WheelDelta, now);
+                    _overlays.InvalidateNear(e.Position, scene.ScrollReach);
+                    _ticker.Ensure();
+                }
                 if (ShowsMouseInBubbles && _keyboard.ProcessWheel(e.WheelDelta, e.Modifiers, now))
                     ShowBubbles();
                 break;
@@ -578,6 +586,12 @@ public sealed class AppController
         var scene = Scene;
         var clicks = scene.Clicks;
         var animating = clicks.IsAnimating(now, scene.RippleDuration) || scene.IsRingFading(now);
+        if (scene.Scroll.IsActive(now) || scene.Scroll.GetFrame(now - TimeSpan.FromMilliseconds(40)) is not null)
+        {
+            // Une image de plus après la fin pour effacer proprement les chevrons.
+            _overlays.InvalidateNear(scene.Scroll.Origin, scene.ScrollReach);
+            animating |= scene.Scroll.IsActive(now);
+        }
         if (_keyboard.Bubbles.Count > 0)
         {
             _overlays.InvalidateScreen(scene.KeyboardScreenId);

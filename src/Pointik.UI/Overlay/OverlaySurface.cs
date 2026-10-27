@@ -61,6 +61,9 @@ public sealed class OverlaySurface : Control
         if (settings.Clicks.Enabled)
             DrawRipples(context, now, compensation);
 
+        if (settings.Clicks.Enabled && settings.Clicks.ShowScroll)
+            DrawScroll(context, now, compensation);
+
         if (_scene.RingVisible && IsNear(_scene.Cursor, _scene.CursorEffectsRadius))
             DrawRing(context, now, compensation);
 
@@ -159,6 +162,40 @@ public sealed class OverlaySurface : Control
                 context.DrawEllipse(Brush(color, r.FillOpacity), null, c, radius, radius);
             var pen = new Pen(Brush(color, r.Opacity), r.StrokeThickness * compensation);
             context.DrawEllipse(null, pen, c, radius, radius);
+        }
+    }
+
+    /// <summary>Chevrons de molette au-dessus (vers le haut) ou en dessous (vers le bas) de l'anneau.</summary>
+    private void DrawScroll(DrawingContext context, TimeSpan now, double compensation)
+    {
+        if (_scene.Scroll.GetFrame(now) is not { } f || !IsNear(f.Origin, _scene.ScrollReach)) return;
+        var color = _scene.Settings.Clicks.ScrollColor;
+        var c = ToLocal(f.Origin);
+        double k = compensation;
+        double halfWidth = 9 * k, halfHeight = 4.5 * k, gap = 9 * k;
+        // Les chevrons partent juste au-delà de l'anneau et glissent dans le sens du défilement.
+        var start = (_scene.Settings.Ring.Size / 2 + 12) * k + f.Shift * 8 * k;
+        var dir = -f.Direction; // axe Y vers le bas : défiler vers le haut = chevrons au-dessus
+        for (var i = 0; i < f.Chevrons; i++)
+        {
+            var y = c.Y + dir * (start + i * gap);
+            var tip = new Point(c.X, y + dir * halfHeight);
+            var left = new Point(c.X - halfWidth, y - dir * halfHeight);
+            var right = new Point(c.X + halfWidth, y - dir * halfHeight);
+            var geometry = new StreamGeometry();
+            using (var g = geometry.Open())
+            {
+                g.BeginFigure(left, false);
+                g.LineTo(tip);
+                g.LineTo(right);
+                g.EndFigure(false);
+            }
+            // Les chevrons les plus éloignés sont un peu plus discrets.
+            var opacity = f.Opacity * (1 - i * 0.25);
+            context.DrawGeometry(null, new Pen(new SolidColorBrush(ShadowColor, 0.25 * opacity), 5 * k,
+                lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), geometry);
+            context.DrawGeometry(null, new Pen(Brush(color, opacity), 3 * k,
+                lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), geometry);
         }
     }
 

@@ -63,6 +63,12 @@ public sealed class OverlayScene
 
     public ClickEffectsEngine Clicks { get; } = new();
 
+    /// <summary>Chevrons de défilement à la molette.</summary>
+    public ScrollIndicator Scroll { get; } = new();
+
+    /// <summary>Distance maximale des chevrons au curseur (pixels logiques).</summary>
+    public double ScrollReach => Settings.Ring.Size / 2 + 12 + ScrollIndicator.MaxChevrons * 9 + 16;
+
     public bool RingVisible => CursorHighlightOn && Settings.Ring.Enabled;
 
     /// <summary>Dernier mouvement ou clic de la souris (effacement de l'anneau immobile).</summary>
@@ -89,5 +95,5 @@ public sealed class OverlayScene
     /// </summary>
     public double CursorEffectsRadius =>
         Math.Max(Math.Max(Settings.Ring.Size / 2 + Settings.Ring.Thickness, Settings.Clicks.MaxRadius + 4),
-            SpotVisible ? Settings.Spot.Radius : 0);
+            Math.Max(SpotVisible ? Settings.Spot.Radius : 0, Settings.Clicks.ShowScroll ? ScrollReach : 0));
 }

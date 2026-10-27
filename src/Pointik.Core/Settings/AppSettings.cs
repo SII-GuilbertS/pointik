@@ -1,4 +1,4 @@
-﻿using Pointik.Core.Drawing;
+using Pointik.Core.Drawing;
 using Pointik.Core.Graphics;
 using Pointik.Core.Input;
 
@@ -102,6 +102,9 @@ public sealed class ClickSettings
     public double MaxRadius { get; set; } = 42;
     /// <summary>Son de clic, désactivé par défaut.</summary>
     public bool Sound { get; set; }
+    /// <summary>Petite animation de chevrons quand on fait défiler avec la molette.</summary>
+    public bool ShowScroll { get; set; } = true;
+    public ArgbColor ScrollColor { get; set; } = ArgbColor.FromRgb(0x16, 0xB1, 0xD9);
 
     internal void Normalize()
     {

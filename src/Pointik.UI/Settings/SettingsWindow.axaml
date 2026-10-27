@@ -122,6 +122,11 @@
             <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Rayon final" />
               <StackPanel Classes="value"><Slider Minimum="15" Maximum="150" Value="{Binding ClickRadius}" />
                 <TextBlock Text="{Binding ClickRadius, StringFormat='{}{0:0} px'}" /></StackPanel></Grid>
+            <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Molette" />
+              <StackPanel Classes="value">
+                <CheckBox IsChecked="{Binding ShowScroll}" Content="Chevrons animés quand on fait défiler" />
+                <s:ColorField Hex="{Binding ScrollColor}" />
+              </StackPanel></Grid>
             <Grid Classes="row" ColumnDefinitions="230,*"><TextBlock Text="Son de clic" />
               <CheckBox Grid.Column="1" IsChecked="{Binding ClickSound}" Content="Jouer un court son à chaque clic" /></Grid>
           </StackPanel>

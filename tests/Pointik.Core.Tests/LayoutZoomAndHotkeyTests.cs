@@ -323,3 +323,35 @@ public class DrawingBoardTests
         Assert.Empty(HotkeyConflicts.Find(h));
     }
 }
+
+public class ScrollIndicatorTests
+{
+    private static TimeSpan Ms(double ms) => TimeSpan.FromMilliseconds(ms);
+
+    [Fact]
+    public void Quick_notches_in_the_same_direction_stack_chevrons_up_to_three()
+    {
+        var s = new Effects.ScrollIndicator();
+        for (var i = 0; i < 5; i++) s.AddNotch(new ScreenPoint(10, 10), -120, Ms(i * 60));
+        var f = s.GetFrame(Ms(260))!.Value;
+        Assert.Equal(-1, f.Direction);
+        Assert.Equal(Effects.ScrollIndicator.MaxChevrons, f.Chevrons);
+    }
+
+    [Fact]
+    public void Changing_direction_restarts_and_the_indicator_fades_out()
+    {
+        var s = new Effects.ScrollIndicator();
+        s.AddNotch(new ScreenPoint(0, 0), -120, Ms(0));
+        s.AddNotch(new ScreenPoint(0, 0), -120, Ms(50));
+        s.AddNotch(new ScreenPoint(0, 0), 120, Ms(100));
+        var f = s.GetFrame(Ms(110))!.Value;
+        Assert.Equal(1, f.Direction);
+        Assert.Equal(1, f.Chevrons);
+        Assert.Equal(1, f.Opacity, 3);
+
+        Assert.InRange(s.GetFrame(Ms(100) + Effects.ScrollIndicator.Duration * 0.8)!.Value.Opacity, 0.01, 0.99);
+        Assert.Null(s.GetFrame(Ms(100) + Effects.ScrollIndicator.Duration));
+        Assert.False(s.IsActive(Ms(2000)));
+    }
+}

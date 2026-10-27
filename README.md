@@ -82,7 +82,7 @@ Chaque modification s'applique immédiatement (aperçu en direct sur l'écran et
 | Onglet | Contenu |
 |---|---|
 | **Curseur** | Anneau : couleur, diamètre (20 à 120 px), épaisseur, opacité, effet de pression quand un bouton est maintenu, effacement quand la souris reste immobile (3 s par défaut, réapparition au premier mouvement). Spot : rayon et niveau d'assombrissement. Le spot est indépendant de l'anneau. |
-| **Clics** | Couleurs du clic gauche (bleu), droit (orange) et milieu (vert), durée (≈ 500 ms par défaut), rayon, son de clic (désactivé par défaut). |
+| **Clics** | Couleurs du clic gauche (bleu), droit (orange) et milieu (vert), durée (≈ 500 ms par défaut), rayon, son de clic (désactivé par défaut). Molette : petits chevrons animés au-dessus ou en dessous de l'anneau selon le sens du défilement (jusqu'à 3 quand on défile vite), couleur réglable. |
 | **Clavier** | Comportement (y compris l'affichage des clics et de la molette, et le masquage dans les champs de mot de passe), position et style (voir ci-dessous). Bouton **Tester sur l'écran**, bouton **Placer à la souris…**. |
 | **Thèmes** | Thèmes prédéfinis et personnels, import et export JSON (voir ci-dessous). |
 | **Zoom** | Niveau (1,5× à 8×, 2× par défaut), suivi « centré sur le curseur » ou « le cadre bouge quand le curseur approche du bord », mode bascule ou « maintenir pour zoomer », durée des transitions (≈ 200 ms). |

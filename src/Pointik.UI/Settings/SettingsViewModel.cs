@@ -99,6 +99,8 @@ public sealed class SettingsViewModel : ObservableObject
     public string MiddleColor { get => S.Clicks.MiddleColor.ToRgbHex(); set => Edit(() => S.Clicks.MiddleColor = ParseColor(value, S.Clicks.MiddleColor)); }
     public double ClickDuration { get => S.Clicks.DurationMs; set => Edit(() => S.Clicks.DurationMs = Math.Round(value / 10) * 10); }
     public double ClickRadius { get => S.Clicks.MaxRadius; set => Edit(() => S.Clicks.MaxRadius = Math.Round(value)); }
+    public bool ShowScroll { get => S.Clicks.ShowScroll; set => Edit(() => S.Clicks.ShowScroll = value); }
+    public string ScrollColor { get => S.Clicks.ScrollColor.ToRgbHex(); set => Edit(() => S.Clicks.ScrollColor = ParseColor(value, S.Clicks.ScrollColor)); }
     public bool ClickSound { get => S.Clicks.Sound; set => Edit(() => S.Clicks.Sound = value); }
 
     // ================================================================== Zoom
