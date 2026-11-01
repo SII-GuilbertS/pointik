@@ -234,6 +234,17 @@ dotnet test                 # tests unitaires du Core
 
 **Diagnostic :** `Pointik.exe --reglages` ouvre directement la fenêtre de réglages au démarrage.
 
+### Compilation automatique (GitHub Actions)
+
+Le workflow `.github/workflows/build.yml` compile Pointik sur un serveur Windows de GitHub :
+- **à chaque envoi sur `main` et à chaque pull request :** tests du Core, puis publication de `Pointik.exe`, téléchargeable dans l'onglet *Actions* (artefact « Pointik-exe ») ;
+- **à chaque étiquette de version** (`1.2`, `v1.2`…) : en plus, un **brouillon de Release** avec l'exe joint et son empreinte SHA-256. Il reste à compléter le texte puis à cliquer sur *Publish release*. Si une Release existe déjà pour l'étiquette, elle n'est pas modifiée.
+
+```powershell
+git tag -a 1.2 -m "Pointik 1.2"
+git push origin 1.2
+```
+
 ### Architecture
 
 | Projet | Rôle |
@@ -289,3 +300,9 @@ Volontairement évités :
 13. **Mode placement** : « Placer à la souris… », déplacer l'aperçu au centre-haut de l'écran, Entrée. Les bulles s'affichent à cet endroit. Changer la résolution ou le DPI : la position relative est conservée.
 14. **Capture vidéo** : OBS (capture d'écran *et* capture de fenêtre) et la Xbox Game Bar (Win + G). L'anneau, les ondes et les bulles apparaissent-ils dans l'enregistrement, **y compris pendant le zoom** ? Noter le résultat pour chaque mode de capture.
 15. **Propreté** : « Lancer avec Windows » cocher puis décocher (vérifier `HKCU\…\Run` avec regedit). Puis « Supprimer toutes les traces » : plus de fichier de réglages, plus de journal, plus d'entrée Run. Quitter : l'icône disparaît, le Gestionnaire des tâches n'affiche plus Pointik, le nombre de handles est revenu à la normale.
+
+---
+
+## Licence
+
+Pointik est distribué sous **licence MIT** : vous pouvez l'utiliser, le modifier et le redistribuer librement, à condition de conserver la mention de copyright. Voir le fichier [LICENSE](LICENSE).

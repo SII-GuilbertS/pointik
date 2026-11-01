@@ -1,0 +1,75 @@
+# Compilation de Pointik.exe sur GitHub Actions.
+# - À chaque envoi sur main et à chaque pull request : tests du Core + exe publié en artefact.
+# - À chaque étiquette de version (1.2, v1.2…) : en plus, un brouillon de Release avec l'exe et son empreinte SHA-256.
+# Une compilation traçable depuis le code source est aussi le prérequis d'une signature via SignPath Foundation.
+name: Compilation
+
+on:
+  push:
+    branches: [main]
+    tags: ['[0-9]*', 'v[0-9]*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Tests et publication
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Tests et publication de Pointik.exe
+        shell: pwsh
+        run: ./publish.ps1
+
+      - name: Empreinte SHA-256
+        id: hash
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist/Pointik.exe -Algorithm SHA256).Hash
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+          "Empreinte SHA-256 de Pointik.exe : ``$hash``" >> $env:GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pointik-exe
+          path: dist/Pointik.exe
+          if-no-files-found: error
+
+    outputs:
+      sha256: ${{ steps.hash.outputs.sha256 }}
+
+  release:
+    name: Brouillon de Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Pointik-exe
+
+      - name: Créer le brouillon (si aucune Release n'existe pour cette étiquette)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Une Release existe déjà pour $TAG : rien n'est modifié."
+            exit 0
+          fi
+          printf '%s\n\n%s\n`%s`\n' \
+            "_Texte à compléter avant publication._" \
+            "**Empreinte SHA-256 de \`Pointik.exe\` :**" "$SHA256" > notes.md
+          gh release create "$TAG" Pointik.exe --draft --title "Pointik $TAG" --notes-file notes.md
