@@ -163,7 +163,8 @@ public sealed class AppController
             return;
         }
         var screen = _platform.Screens.GetScreenFromPoint(_platform.Screens.GetCursorPosition());
-        var window = new DrawingWindow(screen, _platform.OverlayHost, Settings.Drawing, SaveSettings);
+        var window = new DrawingWindow(screen, _platform.OverlayHost, _platform.ScreenCapture, Settings.Drawing,
+            SaveSettings, Notify, _env.Log.Error);
         window.Closed += (_, _) =>
         {
             _drawing = null;

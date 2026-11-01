@@ -519,3 +519,19 @@ public class ArrowTests
         Assert.Equal(10, board.Shapes[0].End.Y, 6);
     }
 }
+
+public class ScreenshotFilesTests
+{
+    [Fact]
+    public void Screenshot_names_are_dated_and_never_overwrite_an_existing_file()
+    {
+        var folder = Path.Combine("C:", "Images", "Pointik");
+        var now = new DateTime(2026, 11, 1, 21, 3, 5);
+        var first = Drawing.ScreenshotFiles.NextPath(folder, now, _ => false);
+        Assert.Equal(Path.Combine(folder, "Pointik 2026-11-01 21-03-05.png"), first);
+
+        var taken = new HashSet<string> { first, Path.Combine(folder, "Pointik 2026-11-01 21-03-05 (2).png") };
+        Assert.Equal(Path.Combine(folder, "Pointik 2026-11-01 21-03-05 (3).png"),
+            Drawing.ScreenshotFiles.NextPath(folder, now, taken.Contains));
+    }
+}

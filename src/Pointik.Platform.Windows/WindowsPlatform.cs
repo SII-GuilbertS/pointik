@@ -25,6 +25,7 @@ public static class WindowsPlatform
             Autostart = new RegistryAutostartService(),
             Sound = new WindowsSoundPlayer(),
             SecureInput = new UiaSecureInputDetector(thread, ui),
+            ScreenCapture = new GdiScreenCapture(),
             DisposeExtra = () =>
             {
                 s_thread = null;

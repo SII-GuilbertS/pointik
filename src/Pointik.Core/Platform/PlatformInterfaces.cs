@@ -167,6 +167,26 @@ public interface ISecureInputDetector : IDisposable
     event Action<bool>? SecureInputChanged;
 }
 
+/// <summary>Image en pixels physiques, 32 bits par pixel, ordre B, G, R, A, ligne du haut en premier.</summary>
+public sealed record CapturedImage(int Width, int Height, byte[] Bgra)
+{
+    /// <summary>Nombre d'octets par ligne.</summary>
+    public int Stride => Width * 4;
+}
+
+/// <summary>Capture d'écran et presse-papiers d'images.</summary>
+public interface IScreenCapture
+{
+    /// <summary>
+    /// Capture une zone de l'écran (pixels physiques) <b>sans</b> les fenêtres de Pointik
+    /// (overlays, barre et surface de dessin). Retourne null en cas d'échec.
+    /// </summary>
+    CapturedImage? Capture(ScreenRect bounds);
+
+    /// <summary>Copie l'image dans le presse-papiers. Retourne false en cas d'échec (presse-papiers occupé…).</summary>
+    bool CopyToClipboard(CapturedImage image);
+}
+
 /// <summary>Lecture d'un court son de clic (optionnel).</summary>
 public interface ISoundPlayer
 {

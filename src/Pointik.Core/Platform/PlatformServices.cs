@@ -15,6 +15,7 @@ public sealed class PlatformServices : IDisposable
     public required IAutostartService Autostart { get; init; }
     public required ISoundPlayer Sound { get; init; }
     public required ISecureInputDetector SecureInput { get; init; }
+    public required IScreenCapture ScreenCapture { get; init; }
 
     /// <summary>Libération supplémentaire propre à la plateforme (thread de messages…).</summary>
     public Action? DisposeExtra { get; init; }

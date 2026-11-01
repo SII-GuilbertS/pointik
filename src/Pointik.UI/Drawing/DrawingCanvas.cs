@@ -66,6 +66,7 @@ public sealed class DrawingCanvas : Control
     {
         base.OnDetachedFromVisualTree(e);
         _caretTimer.Stop();
+        _flashTimer?.Stop();
     }
 
     // ------------------------------------------------------------------ Souris
@@ -208,10 +209,43 @@ public sealed class DrawingCanvas : Control
 
     // ------------------------------------------------------------------ Rendu
 
+    /// <summary>Dessine les formes terminées de la planche (rendu de la capture d'écran).</summary>
+    public static void RenderAnnotations(DrawingContext context, DrawingBoard board)
+    {
+        foreach (var shape in board.Shapes) DrawShape(context, shape);
+    }
+
+    /// <summary>Bref éclair blanc qui confirme une capture d'écran.</summary>
+    public void Flash()
+    {
+        _flashStart = DateTime.UtcNow;
+        _flashTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(16), DispatcherPriority.Render, (_, _) =>
+        {
+            if (FlashOpacity() <= 0) _flashTimer!.Stop();
+            InvalidateVisual();
+        });
+        _flashTimer.Start();
+        InvalidateVisual();
+    }
+
+    private static readonly TimeSpan FlashDuration = TimeSpan.FromMilliseconds(350);
+    private DispatcherTimer? _flashTimer;
+    private DateTime? _flashStart;
+
+    private double FlashOpacity()
+    {
+        if (_flashStart is not { } start) return 0;
+        var t = (DateTime.UtcNow - start) / FlashDuration;
+        return t >= 1 ? 0 : 0.45 * (1 - t);
+    }
+
     public override void Render(DrawingContext context)
     {
         context.FillRectangle(CatchAllBackground, new Rect(Bounds.Size));
-        foreach (var shape in Board.Shapes) DrawShape(context, shape);
+        RenderAnnotations(context, Board);
+        var flash = FlashOpacity();
+        if (flash > 0)
+            context.FillRectangle(new SolidColorBrush(Colors.White, flash), new Rect(Bounds.Size));
         if (Board.Current is { } current)
         {
             if (current.Tool == DrawingTool.Text) DrawTextEditor(context, current);

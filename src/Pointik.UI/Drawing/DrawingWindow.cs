@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -5,6 +6,8 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Pointik.Core.Drawing;
 using Pointik.Core.Graphics;
 using Pointik.Core.Platform;
@@ -16,7 +19,8 @@ namespace Pointik.UI.Drawing;
 /// Mode dessin : une fenêtre transparente couvre l'écran du curseur et capte la souris.
 /// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, S surligneur, T texte,
 /// G gomme, Maj = carré/cercle/45°/ligne droite, Ctrl+Z annuler, Ctrl+Y rétablir, Suppr tout effacer,
-/// Échap quitter (les dessins sont effacés). Pendant la saisie d'un texte, le clavier sert à écrire.
+/// Ctrl+S capture d'écran avec les annotations, Échap quitter (les dessins sont effacés).
+/// Pendant la saisie d'un texte, le clavier sert à écrire.
 /// </summary>
 public sealed class DrawingWindow : Window
 {
@@ -40,14 +44,23 @@ public sealed class DrawingWindow : Window
     private readonly Dictionary<DrawingTool, Button> _toolButtons = new();
     private readonly List<(Button Button, ArgbColor Color)> _colorButtons = new();
     private readonly List<(Button Button, double Value)> _thicknessButtons = new();
+    private readonly IScreenCapture _capture;
+    private readonly Action<string, string> _notify;
+    private readonly Action<string, Exception> _logError;
 
     /// <param name="settingsChanged">Appelé quand l'outil, la couleur ou l'épaisseur change (enregistrement).</param>
-    public DrawingWindow(ScreenInfo screen, IOverlayWindowHost host, DrawingSettings settings, Action settingsChanged)
+    /// <param name="notify">Affiche une notification (titre, message).</param>
+    /// <param name="logError">Consigne une erreur dans le journal.</param>
+    public DrawingWindow(ScreenInfo screen, IOverlayWindowHost host, IScreenCapture capture, DrawingSettings settings,
+        Action settingsChanged, Action<string, string> notify, Action<string, Exception> logError)
     {
         _screen = screen;
         _host = host;
+        _capture = capture;
         _settings = settings;
         _settingsChanged = settingsChanged;
+        _notify = notify;
+        _logError = logError;
 
         Title = "Pointik — Dessin";
         SystemDecorations = SystemDecorations.None;
@@ -138,11 +151,16 @@ public sealed class DrawingWindow : Window
         redo.Click += (_, _) => Redo();
         var clear = BarButton(Label("Tout effacer"), "Tout effacer (Suppr) — annulable avec Ctrl + Z");
         clear.Click += (_, _) => ClearAll();
+        var capture = BarButton(Label("📷  Capture"),
+            "Capture de l'écran avec les annotations (Ctrl + S) — enregistrée dans Images\\Pointik et copiée dans le presse-papiers");
+        capture.Click += (_, _) => CaptureScreen();
         var quit = BarButton(Label("✕  Quitter"), "Quitter le dessin (Échap)");
         quit.Click += (_, _) => Close();
         bar.Children.Add(undo);
         bar.Children.Add(redo);
         bar.Children.Add(clear);
+        bar.Children.Add(Separator());
+        bar.Children.Add(capture);
         bar.Children.Add(quit);
 
         return new Border
@@ -245,6 +263,81 @@ public sealed class DrawingWindow : Window
         _canvas.InvalidateVisual();
     }
 
+    /// <summary>
+    /// Capture l'écran sans les fenêtres de Pointik, y dessine les annotations à la résolution réelle,
+    /// enregistre un PNG dans Images\Pointik et le copie dans le presse-papiers.
+    /// </summary>
+    private void CaptureScreen()
+    {
+        _canvas.CommitText();
+        if (Board.Current is not null) return; // pendant un tracé
+        try
+        {
+            var shot = _capture.Capture(_screen.Bounds);
+            if (shot is null)
+            {
+                _notify("Capture impossible", "Windows n'a pas fourni l'image de l'écran.");
+                return;
+            }
+
+            var size = new PixelSize(shot.Width, shot.Height);
+            var dpi = new Vector(96, 96);
+            using var background = new WriteableBitmap(size, dpi, PixelFormat.Bgra8888, AlphaFormat.Opaque);
+            using (var buffer = background.Lock())
+            {
+                for (var row = 0; row < shot.Height; row++)
+                    Marshal.Copy(shot.Bgra, row * shot.Stride, buffer.Address + row * buffer.RowBytes, shot.Stride);
+            }
+
+            using var image = new RenderTargetBitmap(size, dpi);
+            using (var ctx = image.CreateDrawingContext())
+            {
+                ctx.DrawImage(background, new Rect(0, 0, shot.Width, shot.Height));
+                // Les annotations sont en pixels logiques : mise à l'échelle de l'écran (125 %, 150 %…).
+                using (ctx.PushTransform(Matrix.CreateScale(_screen.Scale, _screen.Scale)))
+                    DrawingCanvas.RenderAnnotations(ctx, Board);
+            }
+
+            var folder = ScreenshotFiles.DefaultFolder();
+            Directory.CreateDirectory(folder);
+            var path = ScreenshotFiles.NextPath(folder, DateTime.Now, File.Exists);
+            image.Save(path);
+
+            var copied = _capture.CopyToClipboard(new CapturedImage(shot.Width, shot.Height, ReadBgra(image, size)));
+            _canvas.Flash();
+            var name = System.IO.Path.GetFileName(path);
+            _notify("Capture enregistrée", copied
+                ? $"Copiée dans le presse-papiers et enregistrée dans Images\\Pointik :\n{name}"
+                : $"Enregistrée dans Images\\Pointik :\n{name}\n(presse-papiers indisponible)");
+        }
+        catch (Exception ex)
+        {
+            _logError("Capture d'écran", ex);
+            _notify("Capture impossible", ex.Message);
+        }
+    }
+
+    /// <summary>Pixels du rendu final en BGRA (l'image est opaque : prémultiplication sans effet).</summary>
+    private static byte[] ReadBgra(Bitmap image, PixelSize size)
+    {
+        var stride = size.Width * 4;
+        var pixels = new byte[stride * size.Height];
+        var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try
+        {
+            image.CopyPixels(new PixelRect(size), handle.AddrOfPinnedObject(), pixels.Length, stride);
+        }
+        finally
+        {
+            handle.Free();
+        }
+        if (image.Format == PixelFormat.Rgba8888)
+        {
+            for (var i = 0; i < pixels.Length; i += 4) (pixels[i], pixels[i + 2]) = (pixels[i + 2], pixels[i]);
+        }
+        return pixels;
+    }
+
     private async void PasteText()
     {
         try
@@ -291,6 +384,9 @@ public sealed class DrawingWindow : Window
             case Key.V when ctrl:
                 PasteText();
                 return true;
+            case Key.S when ctrl:
+                CaptureScreen();
+                return true;
             case Key.Z when ctrl:
                 Undo();
                 return true;
@@ -329,6 +425,10 @@ public sealed class DrawingWindow : Window
                 break;
             case Key.Delete or Key.Back:
                 ClearAll();
+                break;
+            case Key.S when ctrl:
+            case Key.PrintScreen:
+                CaptureScreen();
                 break;
             case Key.S when !ctrl:
                 SetTool(DrawingTool.Highlighter);

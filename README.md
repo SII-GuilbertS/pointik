@@ -66,11 +66,13 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre (l'épaisseur règle aussi la taille du texte) |
 | Annuler / Rétablir | **Ctrl + Z** / **Ctrl + Y** (ou Ctrl + Maj + Z) |
 | Tout effacer (annulable) | **Suppr** |
+| Capture d'écran avec les annotations | Bouton **📷 Capture**, **Ctrl + S** ou **Impr. écran** |
 | Quitter (les dessins sont effacés) | **Échap**, ou Ctrl + Alt + D |
 
 - **Surligneur :** trait large et semi-transparent, dans la couleur choisie (le jaune est idéal pour du texte).
 - **Texte :** chaque lettre est entourée d'un léger halo contrasté, pour rester lisible sur n'importe quel fond. Pendant la saisie, le clavier sert à écrire : les raccourcis d'outils sont suspendus, et changer de couleur ou d'épaisseur s'applique au texte en cours.
 - **Gomme :** un cercle montre la zone effacée. Seul le trait compte : cliquer au milieu d'un cadre vide ne l'efface pas. Un geste de gomme s'annule en une fois.
+- **Capture d'écran :** l'écran du dessin est capturé à sa résolution réelle, avec les annotations, mais **sans** la barre d'outils, l'anneau, le spot ni les bulles du clavier. L'image est enregistrée en PNG dans **Images\Pointik** (« Pointik 2026-11-01 21-03-05.png ») et copiée dans le presse-papiers, prête à coller dans un document ou une présentation. Un bref éclair blanc et une notification confirment la capture. La touche Impr. écran n'arrive à Pointik que si Windows ne la réserve pas à l'Outil Capture d'écran (réglage *Accessibilité → Clavier* de Windows 11).
 
 **Pendant le dessin :**
 - La souris sert à dessiner : les clics n'atteignent plus les applications. Quittez le mode dessin pour reprendre la main.
@@ -79,7 +81,7 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 
 **Limites :**
 - **Écrans :** le dessin se fait sur un seul écran à la fois, celui du curseur à l'ouverture.
-- **Avec le zoom :** dessiner pendant le zoom fonctionne, mais le dessin est agrandi avec le reste de l'écran.
+- **Avec le zoom :** dessiner pendant le zoom fonctionne, mais le dessin est agrandi avec le reste de l'écran. Une capture prise pendant le zoom n'est pas garantie fidèle : quittez le zoom avant de capturer.
 
 ## Réglages
 
