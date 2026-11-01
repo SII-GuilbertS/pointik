@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Pointik.Core.Drawing;
@@ -13,8 +14,9 @@ namespace Pointik.UI.Drawing;
 
 /// <summary>
 /// Mode dessin : une fenêtre transparente couvre l'écran du curseur et capte la souris.
-/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, Maj = carré/cercle/45°,
-/// Ctrl+Z annuler, Suppr tout effacer, Échap quitter (les dessins sont effacés).
+/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, S surligneur, T texte,
+/// G gomme, Maj = carré/cercle/45°/ligne droite, Ctrl+Z annuler, Ctrl+Y rétablir, Suppr tout effacer,
+/// Échap quitter (les dessins sont effacés). Pendant la saisie d'un texte, le clavier sert à écrire.
 /// </summary>
 public sealed class DrawingWindow : Window
 {
@@ -89,12 +91,16 @@ public sealed class DrawingWindow : Window
 
     private Control BuildToolbar()
     {
-        var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        // WrapPanel : sur un petit écran, la barre passe sur deux lignes au lieu de déborder.
+        var bar = new WrapPanel { Orientation = Orientation.Horizontal };
 
         AddTool(bar, DrawingTool.Rectangle, "▭  Cadre", "Cadre (C) — Maj : carré");
         AddTool(bar, DrawingTool.Ellipse, "◯  Ovale", "Ovale (O) — Maj : cercle");
         AddTool(bar, DrawingTool.Arrow, "➜  Flèche", "Flèche (F) — Maj : angle de 45°");
         AddTool(bar, DrawingTool.Freehand, "✎  Main levée", "Ligne libre (L)");
+        AddTool(bar, DrawingTool.Highlighter, "▬  Surligneur", "Surligneur (S) — Maj : ligne droite");
+        AddTool(bar, DrawingTool.Text, "T  Texte", "Texte (T) — cliquer puis taper ; Entrée : nouvelle ligne ; Échap ou clic ailleurs : valider");
+        AddTool(bar, DrawingTool.Eraser, "⌫  Gomme", "Gomme (G) — cliquer ou glisser sur les formes à effacer");
         bar.Children.Add(Separator());
 
         foreach (var (name, hex) in Palette)
@@ -119,20 +125,23 @@ public sealed class DrawingWindow : Window
             {
                 Width = 18, Height = 18,
                 Child = new Ellipse { Width = dot, Height = dot, Fill = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
-            }, $"Trait {name.ToLowerInvariant()}");
+            }, $"Trait {name.ToLowerInvariant()} (et taille du texte)");
             b.Click += (_, _) => SetThickness(value);
             _thicknessButtons.Add((b, value));
             bar.Children.Add(b);
         }
         bar.Children.Add(Separator());
 
-        var undo = BarButton(Label("↶  Annuler"), "Annuler la dernière forme (Ctrl + Z)");
+        var undo = BarButton(Label("↶  Annuler"), "Annuler (Ctrl + Z)");
         undo.Click += (_, _) => Undo();
-        var clear = BarButton(Label("Tout effacer"), "Tout effacer (Suppr)");
+        var redo = BarButton(Label("↷  Rétablir"), "Rétablir (Ctrl + Y)");
+        redo.Click += (_, _) => Redo();
+        var clear = BarButton(Label("Tout effacer"), "Tout effacer (Suppr) — annulable avec Ctrl + Z");
         clear.Click += (_, _) => ClearAll();
         var quit = BarButton(Label("✕  Quitter"), "Quitter le dessin (Échap)");
         quit.Click += (_, _) => Close();
         bar.Children.Add(undo);
+        bar.Children.Add(redo);
         bar.Children.Add(clear);
         bar.Children.Add(quit);
 
@@ -141,7 +150,7 @@ public sealed class DrawingWindow : Window
             Background = BarBackground,
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(8, 6),
-            Margin = new Thickness(0, 12, 0, 0),
+            Margin = new Thickness(16, 12, 16, 0),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
             BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 3, Blur = 14, Color = Color.FromArgb(110, 0, 0, 0) }),
@@ -166,6 +175,7 @@ public sealed class DrawingWindow : Window
             Background = NormalBackground,
             Padding = new Thickness(8, 5),
             CornerRadius = new CornerRadius(6),
+            Margin = new Thickness(2, 1),
             VerticalAlignment = VerticalAlignment.Center,
             Focusable = false,
         };
@@ -177,7 +187,7 @@ public sealed class DrawingWindow : Window
         new() { Text = text, Foreground = Brushes.White, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
 
     private static Control Separator() =>
-        new Border { Width = 1, Margin = new Thickness(4, 4), Background = new SolidColorBrush(Color.FromArgb(70, 255, 255, 255)) };
+        new Border { Width = 1, Height = 22, Margin = new Thickness(5, 0), VerticalAlignment = VerticalAlignment.Center, Background = new SolidColorBrush(Color.FromArgb(70, 255, 255, 255)) };
 
     private void RefreshSelection()
     {
@@ -193,6 +203,8 @@ public sealed class DrawingWindow : Window
 
     private void SetTool(DrawingTool tool)
     {
+        // Changer d'outil valide le texte en cours.
+        _canvas.CommitText();
         _canvas.Tool = _settings.Tool = tool;
         RefreshSelection();
         _settingsChanged();
@@ -201,6 +213,7 @@ public sealed class DrawingWindow : Window
     private void SetColor(ArgbColor color)
     {
         _canvas.Color = _settings.Color = color;
+        _canvas.RestyleText();
         RefreshSelection();
         _settingsChanged();
     }
@@ -208,13 +221,22 @@ public sealed class DrawingWindow : Window
     private void SetThickness(double value)
     {
         _canvas.Thickness = _settings.Thickness = value;
+        _canvas.RestyleText();
         RefreshSelection();
         _settingsChanged();
     }
 
     private void Undo()
     {
-        if (Board.Undo()) _canvas.InvalidateVisual();
+        // Pendant la saisie d'un texte, annuler abandonne ce texte.
+        if (Board.IsEditingText) _canvas.CancelText();
+        else if (Board.Undo()) _canvas.InvalidateVisual();
+    }
+
+    private void Redo()
+    {
+        _canvas.CommitText();
+        if (Board.Redo()) _canvas.InvalidateVisual();
     }
 
     private void ClearAll()
@@ -223,10 +245,67 @@ public sealed class DrawingWindow : Window
         _canvas.InvalidateVisual();
     }
 
+    private async void PasteText()
+    {
+        try
+        {
+            if (Clipboard is { } clipboard && await clipboard.TryGetTextAsync() is { Length: > 0 } text)
+                _canvas.TypeText(text);
+        }
+        catch
+        {
+            // Presse-papiers indisponible (occupé par une autre application) : on ignore.
+        }
+    }
+
+    protected override void OnTextInput(TextInputEventArgs e)
+    {
+        base.OnTextInput(e);
+        if (!Board.IsEditingText || string.IsNullOrEmpty(e.Text)) return;
+        _canvas.TypeText(e.Text);
+        e.Handled = true;
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (Board.IsEditingText ? HandleTextKey(e) : HandleKey(e)) e.Handled = true;
+    }
+
+    /// <summary>Touches pendant la saisie d'un texte ; les caractères arrivent par <see cref="OnTextInput"/>.</summary>
+    private bool HandleTextKey(KeyEventArgs e)
+    {
         var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        switch (e.Key)
+        {
+            case Key.Escape:
+            case Key.Enter when ctrl:
+                _canvas.CommitText();
+                return true;
+            case Key.Enter:
+                _canvas.TypeText("\n");
+                return true;
+            case Key.Back:
+                _canvas.DeleteLastChar();
+                return true;
+            case Key.V when ctrl:
+                PasteText();
+                return true;
+            case Key.Z when ctrl:
+                Undo();
+                return true;
+            case Key.Y when ctrl:
+                Redo();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private bool HandleKey(KeyEventArgs e)
+    {
+        var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
         switch (e.Key)
         {
             case Key.Escape:
@@ -241,11 +320,24 @@ public sealed class DrawingWindow : Window
                     Close();
                 }
                 break;
+            case Key.Z when ctrl && shift:
+            case Key.Y when ctrl:
+                Redo();
+                break;
             case Key.Z when ctrl:
                 Undo();
                 break;
             case Key.Delete or Key.Back:
                 ClearAll();
+                break;
+            case Key.S when !ctrl:
+                SetTool(DrawingTool.Highlighter);
+                break;
+            case Key.T when !ctrl:
+                SetTool(DrawingTool.Text);
+                break;
+            case Key.G when !ctrl:
+                SetTool(DrawingTool.Eraser);
                 break;
             case Key.C when !ctrl:
                 SetTool(DrawingTool.Rectangle);
@@ -260,8 +352,8 @@ public sealed class DrawingWindow : Window
                 SetTool(DrawingTool.Freehand);
                 break;
             default:
-                return;
+                return false;
         }
-        e.Handled = true;
+        return true;
     }
 }

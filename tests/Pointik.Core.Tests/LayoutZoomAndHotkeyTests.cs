@@ -310,9 +310,134 @@ public class DrawingBoardTests
         }
         Assert.True(board.Undo());
         Assert.Equal(2, board.Shapes.Count);
-        board.Clear();
+        Assert.True(board.Clear());
         Assert.True(board.IsEmpty);
-        Assert.False(board.Undo());
+        Assert.False(board.Clear());
+    }
+
+    private static Drawing.DrawingBoard BoardWithRectangles(int count)
+    {
+        var board = new Drawing.DrawingBoard();
+        for (var i = 0; i < count; i++)
+        {
+            board.Begin(Drawing.DrawingTool.Rectangle, Red, 4, new ScreenPoint(i * 100, 0));
+            board.End(new ScreenPoint(i * 100 + 50, 50), false);
+        }
+        return board;
+    }
+
+    [Fact]
+    public void Redo_restores_undone_shapes_and_a_new_shape_clears_the_redo_history()
+    {
+        var board = BoardWithRectangles(3);
+        var last = board.Shapes[2];
+        Assert.True(board.Undo());
+        Assert.True(board.CanRedo);
+        Assert.True(board.Redo());
+        Assert.Same(last, board.Shapes[2]);
+        Assert.False(board.Redo());
+
+        board.Undo();
+        board.Begin(Drawing.DrawingTool.Ellipse, Red, 4, new ScreenPoint(0, 0));
+        board.End(new ScreenPoint(40, 40), false);
+        Assert.False(board.CanRedo);
+    }
+
+    [Fact]
+    public void Clear_can_be_undone_and_redone()
+    {
+        var board = BoardWithRectangles(3);
+        var before = board.Shapes.ToList();
+        board.Clear();
+        Assert.True(board.Undo());
+        Assert.Equal(before, board.Shapes);
+        Assert.True(board.Redo());
+        Assert.Empty(board.Shapes);
+    }
+
+    [Fact]
+    public void Eraser_removes_touched_shapes_in_one_undoable_step_and_restores_their_order()
+    {
+        var board = BoardWithRectangles(4);
+        var before = board.Shapes.ToList();
+
+        // Clic dans le vide à l'intérieur d'un cadre : rien n'est effacé (seul le contour compte).
+        board.BeginErase(new ScreenPoint(25, 25));
+        Assert.Equal(0, board.EndErase());
+
+        // Glissé rapide le long du bord haut des cadres 1 et 2 (sans point intermédiaire) : les deux sont effacés.
+        board.BeginErase(new ScreenPoint(110, 0));
+        board.EraseTo(new ScreenPoint(240, 0));
+        Assert.Equal(2, board.EndErase());
+        Assert.Equal(new[] { before[0], before[3] }, board.Shapes);
+
+        Assert.True(board.Undo());
+        Assert.Equal(before, board.Shapes);
+        Assert.True(board.Redo());
+        Assert.Equal(2, board.Shapes.Count);
+    }
+
+    [Fact]
+    public void Hit_test_follows_the_drawn_line()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Ellipse, Red, 4, new ScreenPoint(0, 0));
+        board.End(new ScreenPoint(200, 100), false);
+        board.Begin(Drawing.DrawingTool.Freehand, Red, 4, new ScreenPoint(0, 300));
+        board.Extend(new ScreenPoint(100, 300), false);
+        board.End(new ScreenPoint(100, 400), false);
+        var (ellipse, line) = (board.Shapes[0], board.Shapes[1]);
+
+        Assert.True(Drawing.DrawingBoard.Hits(ellipse, new ScreenPoint(200, 50), 5)); // sur le bord droit
+        Assert.True(Drawing.DrawingBoard.Hits(ellipse, new ScreenPoint(100, 3), 5));  // près du haut
+        Assert.False(Drawing.DrawingBoard.Hits(ellipse, new ScreenPoint(100, 50), 5)); // au centre
+        Assert.True(Drawing.DrawingBoard.Hits(line, new ScreenPoint(104, 350), 5));
+        Assert.False(Drawing.DrawingBoard.Hits(line, new ScreenPoint(50, 350), 5));
+    }
+
+    [Fact]
+    public void Highlighter_is_wide_translucent_and_straight_with_shift()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.Highlighter, Red, 6, new ScreenPoint(0, 0));
+        board.Extend(new ScreenPoint(30, 4), false);
+        board.Extend(new ScreenPoint(60, 6), false);
+        board.End(new ScreenPoint(200, 9), constrain: true);
+
+        var h = Assert.Single(board.Shapes);
+        Assert.Equal(Drawing.DrawingBoard.HighlighterWidth(6), h.Thickness);
+        Assert.True(h.Thickness > 6);
+        Assert.InRange(h.Color.A, 90, 115);
+        Assert.Equal(2, h.Points.Count);
+        Assert.Equal(0, h.Points[1].Y, 6);
+    }
+
+    [Fact]
+    public void Text_is_typed_edited_measured_and_empty_text_is_ignored()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.BeginText(Red, 6, new ScreenPoint(10, 20));
+        Assert.True(board.IsEditingText);
+        board.TypeText("Bonjour\r\nà tous\t!");
+        board.TypeText("\r");      // Entrée relayée comme caractère : ignorée
+        board.TypeText("\u0008");  // Retour arrière relayé comme caractère : ignoré
+        board.TypeText("😀");
+        board.DeleteLastChar();     // l'émoji (deux unités UTF-16) part d'un coup
+        board.TypeText("\n\n  ");
+        board.RestyleText(Red, 12);
+
+        Assert.True(board.EndText(a => (a.Text.Length * 10.0, 30)));
+        var text = Assert.Single(board.Shapes);
+        Assert.Equal("Bonjour\nà tous !", text.Text);
+        Assert.Equal(Drawing.DrawingBoard.FontSizeFor(12), text.FontSize);
+        Assert.Equal(new ScreenRect(10, 20, 160, 30), text.Bounds);
+        Assert.True(Drawing.DrawingBoard.Hits(text, new ScreenPoint(100, 40), 0));
+        Assert.False(board.IsEditingText);
+
+        board.BeginText(Red, 6, new ScreenPoint(0, 0));
+        board.TypeText("   ");
+        Assert.False(board.EndText(_ => (1, 1)));
+        Assert.Single(board.Shapes);
     }
 
     [Fact]

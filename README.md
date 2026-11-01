@@ -6,7 +6,7 @@ Pointik met en valeur la souris et le clavier pendant les cours, les présentati
 - un **spot** (mode projecteur) qui assombrit l'écran sauf autour du curseur ;
 - une **onde** à chaque clic ;
 - un **zoom d'écran** en direct ;
-- le **dessin à l'écran** : cadres, ovales, flèches, lignes libres ;
+- le **dessin à l'écran** : cadres, ovales, flèches, lignes libres, surligneur, texte et gomme ;
 - les **touches du clavier** à l'écran.
 
 Logiciel gratuit, en français, pour Windows 10 (version 2004 et plus) et Windows 11.
@@ -59,12 +59,18 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Action | Souris ou touche |
 |---|---|
 | Tracer | Glisser avec le bouton gauche |
-| Cadre / Ovale / Flèche / Main levée | Boutons de la barre, ou **C** / **O** / **F** / **L** |
-| Carré, cercle, flèche à 45° | Maintenir **Maj** pendant le tracé |
-| Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre |
-| Annuler la dernière forme | **Ctrl + Z** |
-| Tout effacer | **Suppr** |
+| Cadre / Ovale / Flèche / Main levée / Surligneur | Boutons de la barre, ou **C** / **O** / **F** / **L** / **S** |
+| Carré, cercle, flèche à 45°, surlignage droit | Maintenir **Maj** pendant le tracé |
+| Texte | **T**, puis cliquer et taper. **Entrée** : nouvelle ligne ; **Ctrl + V** : coller ; **Échap**, **Ctrl + Entrée** ou clic ailleurs : valider |
+| Gomme | **G**, puis cliquer ou glisser sur les formes à effacer |
+| Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre (l'épaisseur règle aussi la taille du texte) |
+| Annuler / Rétablir | **Ctrl + Z** / **Ctrl + Y** (ou Ctrl + Maj + Z) |
+| Tout effacer (annulable) | **Suppr** |
 | Quitter (les dessins sont effacés) | **Échap**, ou Ctrl + Alt + D |
+
+- **Surligneur :** trait large et semi-transparent, dans la couleur choisie (le jaune est idéal pour du texte).
+- **Texte :** chaque lettre est entourée d'un léger halo contrasté, pour rester lisible sur n'importe quel fond. Pendant la saisie, le clavier sert à écrire : les raccourcis d'outils sont suspendus, et changer de couleur ou d'épaisseur s'applique au texte en cours.
+- **Gomme :** un cercle montre la zone effacée. Seul le trait compte : cliquer au milieu d'un cadre vide ne l'efface pas. Un geste de gomme s'annule en une fois.
 
 **Pendant le dessin :**
 - La souris sert à dessiner : les clics n'atteignent plus les applications. Quittez le mode dessin pour reprendre la main.
