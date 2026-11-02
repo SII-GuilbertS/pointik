@@ -18,7 +18,7 @@ Légende de l'effort : 🟢 faible · 🟡 moyen · 🔴 important. ⭐ = recomm
 | # | Idée | Inspiration | Effort | Statut |
 |---|---|---|---|---|
 | 5 | **Pages de dessin** : plusieurs calques, passage de l'un à l'autre par 1, 2, 3… | Epic Pen, Gromit-MPX | 🟡 | À faire |
-| 6 | **Formes en plus** : ligne droite, rectangle plein semi-transparent, numéros auto-incrémentés (①②③) pour décrire des étapes. | Snagit, Greenshot | 🟡 | Fait en 1.3 |
+| 6 | **Formes en plus** : ligne droite, rectangle plein semi-transparent, numéros auto-incrémentés (①②③) pour décrire des étapes. | Snagit, Greenshot | 🟡 | Fait en 1.2.1 |
 | 7 ⭐ | **Encre qui s'efface seule** : un trait qui disparaît au bout de 2 à 3 s, pour pointer sans avoir à effacer. | Presentify, pointeur laser de PowerPoint | 🟢 | À faire |
 | 8 | **Dessins enregistrés sur disque** : retrouver ses annotations après un redémarrage de Pointik (aujourd'hui elles restent en mémoire seulement). | — | 🟡 | À faire |
 
