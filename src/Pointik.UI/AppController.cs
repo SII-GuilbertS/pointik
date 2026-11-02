@@ -5,6 +5,7 @@ using Pointik.Core.Keys;
 using Pointik.Core.Platform;
 using Pointik.Core.Settings;
 using Pointik.Core.Zoom;
+using Pointik.Core.Drawing;
 using Pointik.UI.Drawing;
 using Pointik.UI.Overlay;
 using Pointik.UI.Services;
@@ -28,6 +29,9 @@ public sealed class AppController
     private readonly DispatcherTimer _idleTimer;
     private OverlayManager? _overlays;
     private DrawingWindow? _drawing;
+    // Planches de dessin par écran (identifiant de l'écran) : conservées en mémoire quand on quitte
+    // le mode dessin, retrouvées à la réouverture, perdues à la fermeture de Pointik.
+    private readonly Dictionary<string, DrawingBoard> _boards = new();
     private bool _holdZoom;
     private bool _shutDown;
     private bool _tracesDeleted;
@@ -154,7 +158,21 @@ public sealed class AppController
     /// <summary>Le mode dessin est ouvert.</summary>
     public bool IsDrawing => _drawing is not null;
 
-    /// <summary>Ouvre le mode dessin sur l'écran du curseur, ou le ferme (les dessins sont effacés).</summary>
+    /// <summary>Au moins un écran a des dessins conservés (affichés ou masqués).</summary>
+    public bool HasDrawings => _boards.Values.Any(b => !b.IsEmpty);
+
+    /// <summary>Efface les dessins de tous les écrans, mode dessin ouvert ou non.</summary>
+    public void ClearDrawings()
+    {
+        foreach (var board in _boards.Values) board.Clear();
+        _drawing?.RefreshCanvas();
+        StateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Ouvre le mode dessin sur l'écran du curseur, ou le ferme. Fermer masque les dessins sans les effacer :
+    /// ils réapparaissent à la prochaine ouverture sur le même écran.
+    /// </summary>
     public void ToggleDrawing()
     {
         if (_drawing is { } open)
@@ -163,7 +181,8 @@ public sealed class AppController
             return;
         }
         var screen = _platform.Screens.GetScreenFromPoint(_platform.Screens.GetCursorPosition());
-        var window = new DrawingWindow(screen, _platform.OverlayHost, _platform.ScreenCapture, Settings.Drawing,
+        if (!_boards.TryGetValue(screen.Id, out var board)) _boards[screen.Id] = board = new DrawingBoard();
+        var window = new DrawingWindow(screen, board, _platform.OverlayHost, _platform.ScreenCapture, Settings.Drawing,
             SaveSettings, Notify, _env.Log.Error);
         window.Closed += (_, _) =>
         {

@@ -65,9 +65,9 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Gomme | **G**, puis cliquer ou glisser sur les formes à effacer |
 | Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre (l'épaisseur règle aussi la taille du texte) |
 | Annuler / Rétablir | **Ctrl + Z** / **Ctrl + Y** (ou Ctrl + Maj + Z) |
-| Tout effacer (annulable) | **Suppr** |
+| Tout effacer (annulable) | Bouton **🗑 Tout effacer**, ou **Suppr** |
 | Capture d'écran avec les annotations | Bouton **📷 Capture**, **Ctrl + S** ou **Impr. écran** |
-| Quitter (les dessins sont effacés) | **Échap**, ou Ctrl + Alt + D |
+| Quitter (les dessins sont masqués, pas effacés) | **Échap**, ou Ctrl + Alt + D |
 
 - **Surligneur :** trait large et semi-transparent, dans la couleur choisie (le jaune est idéal pour du texte).
 - **Texte :** chaque lettre est entourée d'un léger halo contrasté, pour rester lisible sur n'importe quel fond. Pendant la saisie, le clavier sert à écrire : les raccourcis d'outils sont suspendus, et changer de couleur ou d'épaisseur s'applique au texte en cours.
@@ -78,6 +78,8 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 - La souris sert à dessiner : les clics n'atteignent plus les applications. Quittez le mode dessin pour reprendre la main.
 - L'anneau, les ondes de clic et les bulles du clavier restent affichés.
 - Le dernier outil, la dernière couleur et la dernière épaisseur sont mémorisés.
+
+**Dessins conservés :** quitter le mode dessin masque les annotations sans les effacer. En le rouvrant sur le même écran, on les retrouve telles quelles, avec l'historique d'annulation. Chaque écran garde ses propres dessins. Pour repartir de zéro : **🗑 Tout effacer** dans la barre, ou *Effacer les dessins* dans le menu de l'icône (efface tous les écrans, même mode dessin fermé). Les dessins restent en mémoire uniquement : ils disparaissent à la fermeture de Pointik.
 
 **Limites :**
 - **Écrans :** le dessin se fait sur un seul écran à la fois, celui du curseur à l'ouverture.

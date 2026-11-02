@@ -19,7 +19,8 @@ namespace Pointik.UI.Drawing;
 /// Mode dessin : une fenêtre transparente couvre l'écran du curseur et capte la souris.
 /// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, S surligneur, T texte,
 /// G gomme, Maj = carré/cercle/45°/ligne droite, Ctrl+Z annuler, Ctrl+Y rétablir, Suppr tout effacer,
-/// Ctrl+S capture d'écran avec les annotations, Échap quitter (les dessins sont effacés).
+/// Ctrl+S capture d'écran avec les annotations, Échap quitter (les dessins sont masqués, pas effacés :
+/// la planche appartient à l'appelant et se retrouve à la réouverture).
 /// Pendant la saisie d'un texte, le clavier sert à écrire.
 /// </summary>
 public sealed class DrawingWindow : Window
@@ -51,7 +52,7 @@ public sealed class DrawingWindow : Window
     /// <param name="settingsChanged">Appelé quand l'outil, la couleur ou l'épaisseur change (enregistrement).</param>
     /// <param name="notify">Affiche une notification (titre, message).</param>
     /// <param name="logError">Consigne une erreur dans le journal.</param>
-    public DrawingWindow(ScreenInfo screen, IOverlayWindowHost host, IScreenCapture capture, DrawingSettings settings,
+    public DrawingWindow(ScreenInfo screen, DrawingBoard board, IOverlayWindowHost host, IScreenCapture capture, DrawingSettings settings,
         Action settingsChanged, Action<string, string> notify, Action<string, Exception> logError)
     {
         _screen = screen;
@@ -74,7 +75,7 @@ public sealed class DrawingWindow : Window
         Width = screen.Bounds.Width / screen.Scale;
         Height = screen.Bounds.Height / screen.Scale;
 
-        _canvas = new DrawingCanvas(new DrawingBoard())
+        _canvas = new DrawingCanvas(board)
         {
             Tool = settings.Tool,
             Color = settings.Color,
@@ -89,6 +90,19 @@ public sealed class DrawingWindow : Window
     }
 
     public DrawingBoard Board => _canvas.Board;
+
+    /// <summary>Redessine la planche après une modification extérieure (tout effacer depuis le menu).</summary>
+    public void RefreshCanvas() => _canvas.InvalidateVisual();
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (e.Cancel) return;
+        // La planche est conservée : on valide le texte en cours et on termine proprement un geste inachevé.
+        _canvas.CommitText();
+        if (Board.IsErasing) Board.EndErase();
+        else if (Board.Current is not null) Board.Cancel();
+    }
 
     protected override void OnOpened(EventArgs e)
     {
@@ -149,12 +163,12 @@ public sealed class DrawingWindow : Window
         undo.Click += (_, _) => Undo();
         var redo = BarButton(Label("↷  Rétablir"), "Rétablir (Ctrl + Y)");
         redo.Click += (_, _) => Redo();
-        var clear = BarButton(Label("Tout effacer"), "Tout effacer (Suppr) — annulable avec Ctrl + Z");
+        var clear = BarButton(Label("🗑  Tout effacer"), "Tout effacer (Suppr) — annulable avec Ctrl + Z");
         clear.Click += (_, _) => ClearAll();
         var capture = BarButton(Label("📷  Capture"),
             "Capture de l'écran avec les annotations (Ctrl + S) — enregistrée dans Images\\Pointik et copiée dans le presse-papiers");
         capture.Click += (_, _) => CaptureScreen();
-        var quit = BarButton(Label("✕  Quitter"), "Quitter le dessin (Échap)");
+        var quit = BarButton(Label("✕  Quitter"), "Quitter le dessin (Échap) — les dessins sont masqués et réapparaissent à la prochaine ouverture");
         quit.Click += (_, _) => Close();
         bar.Children.Add(undo);
         bar.Children.Add(redo);
