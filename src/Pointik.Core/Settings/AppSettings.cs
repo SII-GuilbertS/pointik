@@ -206,6 +206,11 @@ public sealed class DrawingSettings
     public ArgbColor Color { get; set; } = ArgbColor.FromRgb(0xE5, 0x2B, 0x2B);
     /// <summary>Épaisseur du trait en pixels logiques (1 à 40).</summary>
     public double Thickness { get; set; } = 6;
+    /// <summary>
+    /// Laisser les dessins affichés hors du mode dessin (fenêtre traversable aux clics : les applications
+    /// restent utilisables). Désactivé : quitter le mode dessin masque les dessins.
+    /// </summary>
+    public bool KeepVisible { get; set; }
 
     internal void Normalize()
     {

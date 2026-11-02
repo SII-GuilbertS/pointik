@@ -12,7 +12,7 @@ public sealed class Shell : IDisposable
 {
     private readonly AppController _app;
     private readonly TrayIcon _tray;
-    private readonly NativeMenuItem _ring, _spot, _clicks, _keyboard, _pause, _zoom, _draw, _clearDrawings;
+    private readonly NativeMenuItem _ring, _spot, _clicks, _keyboard, _pause, _zoom, _draw, _keepDrawings, _clearDrawings;
     private SettingsWindow? _settingsWindow;
 
     public Shell(Application application, AppController app)
@@ -25,6 +25,7 @@ public sealed class Shell : IDisposable
         _pause = Toggle("Pause totale du clavier", () => _app.KeyboardPaused = !_app.KeyboardPaused);
         _zoom = Toggle("Zoom (Ctrl + Alt + Z)", () => _app.ZoomEnabled = !_app.ZoomEnabled);
         _draw = Toggle("Dessiner à l'écran", () => _app.ToggleDrawing());
+        _keepDrawings = Toggle("Laisser les dessins affichés", () => _app.DrawingsKeptVisible = !_app.DrawingsKeptVisible);
         _clearDrawings = new NativeMenuItem("Effacer les dessins");
         _clearDrawings.Click += (_, _) => _app.ClearDrawings();
 
@@ -37,7 +38,7 @@ public sealed class Shell : IDisposable
         foreach (var item in new NativeMenuItemBase[]
                  {
                      _ring, _spot, _clicks, _keyboard, _pause, _zoom,
-                     new NativeMenuItemSeparator(), _draw, _clearDrawings,
+                     new NativeMenuItemSeparator(), _draw, _keepDrawings, _clearDrawings,
                      new NativeMenuItemSeparator(), settings, new NativeMenuItemSeparator(), quit,
                  })
         {
@@ -75,6 +76,7 @@ public sealed class Shell : IDisposable
         _zoom.IsChecked = _app.ZoomEnabled;
         _draw.IsChecked = _app.IsDrawing;
         // Pendant le dessin, la planche change sans notification : l'entrée reste alors disponible.
+        _keepDrawings.IsChecked = _app.DrawingsKeptVisible;
         _clearDrawings.IsEnabled = _app.IsDrawing || _app.HasDrawings;
         _draw.Header = $"Dessiner à l'écran ({_app.KeyNames.Format(_app.Settings.Hotkeys.Drawing)})";
         _tray.ToolTipText = _app.KeyboardPaused

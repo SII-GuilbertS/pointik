@@ -5,6 +5,7 @@ using Pointik.Core.Geometry;
 using Pointik.Core.Graphics;
 using Pointik.Core.Input;
 using Pointik.Core.Platform;
+using Pointik.UI.Drawing;
 using Pointik.UI.Keyboard;
 using Pointik.UI.Services;
 
@@ -54,6 +55,11 @@ public sealed class OverlaySurface : Control
         // dessinés à l'échelle 1/zoom pour garder une taille apparente constante.
         var zoomed = IsZoomedScreen;
         var compensation = zoomed ? 1 / _scene.Zoom.Scale : 1.0;
+
+        // Dessins laissés affichés : sous les autres effets, comme s'ils faisaient partie de l'écran
+        // (agrandis avec lui pendant le zoom, donc sans compensation).
+        if (_scene.VisibleDrawing(Screen.Id) is { } drawing)
+            DrawingCanvas.RenderAnnotations(context, drawing);
 
         if (_scene.SpotVisible)
             DrawSpot(context, settings.Spot.Radius * compensation, settings.Spot.Dimming);

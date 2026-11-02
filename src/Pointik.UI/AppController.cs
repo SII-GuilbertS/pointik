@@ -80,6 +80,7 @@ public sealed class AppController
         _overlays.Scene.Cursor = _platform.Screens.GetCursorPosition();
         _overlays.Scene.LastMouseActivity = AppClock.Now;
         _overlays.Scene.KeyboardScreenId = ResolveKeyboardScreen().Id;
+        _overlays.Scene.Drawings = _boards;
         _overlays.Rebuild();
 
         _platform.InputHook.MouseEvent += OnMouse;
@@ -166,7 +167,23 @@ public sealed class AppController
     {
         foreach (var board in _boards.Values) board.Clear();
         _drawing?.RefreshCanvas();
+        _overlays?.InvalidateAll();
         StateChanged?.Invoke();
+    }
+
+    /// <summary>Laisser les dessins affichés hors du mode dessin (les clics atteignent les applications).</summary>
+    public bool DrawingsKeptVisible
+    {
+        get => Settings.Drawing.KeepVisible;
+        set
+        {
+            if (Settings.Drawing.KeepVisible == value) return;
+            Settings.Drawing.KeepVisible = value;
+            _drawing?.RefreshToolbar();
+            _overlays?.InvalidateAll();
+            SaveSettings();
+            StateChanged?.Invoke();
+        }
     }
 
     /// <summary>
@@ -183,13 +200,25 @@ public sealed class AppController
         var screen = _platform.Screens.GetScreenFromPoint(_platform.Screens.GetCursorPosition());
         if (!_boards.TryGetValue(screen.Id, out var board)) _boards[screen.Id] = board = new DrawingBoard();
         var window = new DrawingWindow(screen, board, _platform.OverlayHost, _platform.ScreenCapture, Settings.Drawing,
-            SaveSettings, Notify, _env.Log.Error);
+            SaveSettings, Notify, _env.Log.Error, () => DrawingsKeptVisible = !DrawingsKeptVisible);
         window.Closed += (_, _) =>
         {
             _drawing = null;
+            if (_overlays is not null)
+            {
+                // Les dessins de cet écran repassent dans l'overlay s'ils restent affichés.
+                Scene.DrawingOpenScreenId = null;
+                _overlays.InvalidateScreen(screen.Id);
+            }
             StateChanged?.Invoke();
         };
         _drawing = window;
+        if (_overlays is not null)
+        {
+            // La fenêtre de dessin affiche elle-même la planche : l'overlay de cet écran ne la double pas.
+            Scene.DrawingOpenScreenId = screen.Id;
+            _overlays.InvalidateScreen(screen.Id);
+        }
         window.Show();
         StateChanged?.Invoke();
     }

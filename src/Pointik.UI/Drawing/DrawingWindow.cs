@@ -20,7 +20,8 @@ namespace Pointik.UI.Drawing;
 /// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, S surligneur, T texte,
 /// G gomme, Maj = carré/cercle/45°/ligne droite, Ctrl+Z annuler, Ctrl+Y rétablir, Suppr tout effacer,
 /// Ctrl+S capture d'écran avec les annotations, Échap quitter (les dessins sont masqués, pas effacés :
-/// la planche appartient à l'appelant et se retrouve à la réouverture).
+/// la planche appartient à l'appelant et se retrouve à la réouverture ; avec « Laisser affiché »,
+/// elle reste visible dans l'overlay traversable aux clics).
 /// Pendant la saisie d'un texte, le clavier sert à écrire.
 /// </summary>
 public sealed class DrawingWindow : Window
@@ -48,12 +49,16 @@ public sealed class DrawingWindow : Window
     private readonly IScreenCapture _capture;
     private readonly Action<string, string> _notify;
     private readonly Action<string, Exception> _logError;
+    private readonly Action _toggleKeepVisible;
+    private Button? _keepVisibleButton;
 
     /// <param name="settingsChanged">Appelé quand l'outil, la couleur ou l'épaisseur change (enregistrement).</param>
     /// <param name="notify">Affiche une notification (titre, message).</param>
     /// <param name="logError">Consigne une erreur dans le journal.</param>
+    /// <param name="toggleKeepVisible">Bascule « laisser les dessins affichés » hors du mode dessin.</param>
     public DrawingWindow(ScreenInfo screen, DrawingBoard board, IOverlayWindowHost host, IScreenCapture capture, DrawingSettings settings,
-        Action settingsChanged, Action<string, string> notify, Action<string, Exception> logError)
+        Action settingsChanged, Action<string, string> notify, Action<string, Exception> logError,
+        Action toggleKeepVisible)
     {
         _screen = screen;
         _host = host;
@@ -62,6 +67,7 @@ public sealed class DrawingWindow : Window
         _settingsChanged = settingsChanged;
         _notify = notify;
         _logError = logError;
+        _toggleKeepVisible = toggleKeepVisible;
 
         Title = "Pointik — Dessin";
         SystemDecorations = SystemDecorations.None;
@@ -93,6 +99,9 @@ public sealed class DrawingWindow : Window
 
     /// <summary>Redessine la planche après une modification extérieure (tout effacer depuis le menu).</summary>
     public void RefreshCanvas() => _canvas.InvalidateVisual();
+
+    /// <summary>Met à jour les boutons après un changement extérieur (menu de l'icône).</summary>
+    public void RefreshToolbar() => RefreshSelection();
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
@@ -168,6 +177,9 @@ public sealed class DrawingWindow : Window
         var capture = BarButton(Label("📷  Capture"),
             "Capture de l'écran avec les annotations (Ctrl + S) — enregistrée dans Images\\Pointik et copiée dans le presse-papiers");
         capture.Click += (_, _) => CaptureScreen();
+        _keepVisibleButton = BarButton(Label("📌  Laisser affiché"),
+            "Laisser les dessins affichés après avoir quitté le mode dessin — les clics atteignent alors les applications");
+        _keepVisibleButton.Click += (_, _) => _toggleKeepVisible();
         var quit = BarButton(Label("✕  Quitter"), "Quitter le dessin (Échap) — les dessins sont masqués et réapparaissent à la prochaine ouverture");
         quit.Click += (_, _) => Close();
         bar.Children.Add(undo);
@@ -175,6 +187,7 @@ public sealed class DrawingWindow : Window
         bar.Children.Add(clear);
         bar.Children.Add(Separator());
         bar.Children.Add(capture);
+        bar.Children.Add(_keepVisibleButton);
         bar.Children.Add(quit);
 
         return new Border
@@ -229,6 +242,8 @@ public sealed class DrawingWindow : Window
             b.Background = c == _canvas.Color ? SelectedBackground : NormalBackground;
         foreach (var (b, v) in _thicknessButtons)
             b.Background = Math.Abs(v - _canvas.Thickness) < 0.01 ? SelectedBackground : NormalBackground;
+        if (_keepVisibleButton is not null)
+            _keepVisibleButton.Background = _settings.KeepVisible ? SelectedBackground : NormalBackground;
     }
 
     // ------------------------------------------------------------------ Actions

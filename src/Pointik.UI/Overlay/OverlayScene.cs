@@ -1,3 +1,4 @@
+using Pointik.Core.Drawing;
 using Pointik.Core.Effects;
 using Pointik.Core.Geometry;
 using Pointik.Core.Keys;
@@ -25,6 +26,17 @@ public sealed class OverlayScene
 
     /// <summary>État du zoom (pour compenser la taille des effets).</summary>
     public ZoomController Zoom { get; }
+
+    /// <summary>Planches de dessin par identifiant d'écran (partagées avec le mode dessin).</summary>
+    public IReadOnlyDictionary<string, DrawingBoard> Drawings { get; set; } = new Dictionary<string, DrawingBoard>();
+
+    /// <summary>Écran où le mode dessin est ouvert (il affiche lui-même sa planche), ou null.</summary>
+    public string? DrawingOpenScreenId { get; set; }
+
+    /// <summary>Planche à afficher sur l'écran donné hors du mode dessin, ou null.</summary>
+    public DrawingBoard? VisibleDrawing(string screenId) =>
+        Settings.Drawing.KeepVisible && screenId != DrawingOpenScreenId
+        && Drawings.TryGetValue(screenId, out var board) && board.Shapes.Count > 0 ? board : null;
 
     /// <summary>Le zoom de la plateforme agrandit aussi les fenêtres overlay.</summary>
     public bool OverlaysMagnified { get; }

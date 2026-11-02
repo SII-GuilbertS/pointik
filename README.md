@@ -81,6 +81,8 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 
 **Dessins conservés :** quitter le mode dessin masque les annotations sans les effacer. En le rouvrant sur le même écran, on les retrouve telles quelles, avec l'historique d'annulation. Chaque écran garde ses propres dessins. Pour repartir de zéro : **🗑 Tout effacer** dans la barre, ou *Effacer les dessins* dans le menu de l'icône (efface tous les écrans, même mode dessin fermé). Les dessins restent en mémoire uniquement : ils disparaissent à la fermeture de Pointik.
 
+**Laisser affiché :** le bouton **📌 Laisser affiché** de la barre (ou *Laisser les dessins affichés* dans le menu de l'icône) garde les annotations à l'écran après avoir quitté le mode dessin. Elles s'affichent alors dans la fenêtre transparente de Pointik, qui laisse passer les clics : on utilise ses applications normalement et les flèches et cadres restent en place. Rouvrir le mode dessin permet de les modifier ; *Effacer les dessins* les retire. Ce choix est mémorisé. Les annotations sont fixes à l'écran : elles ne suivent pas une fenêtre que l'on déplace ni une page que l'on fait défiler. Pendant le zoom, elles sont agrandies avec le reste de l'écran.
+
 **Limites :**
 - **Écrans :** le dessin se fait sur un seul écran à la fois, celui du curseur à l'ouverture.
 - **Avec le zoom :** dessiner pendant le zoom fonctionne, mais le dessin est agrandi avec le reste de l'écran. Une capture prise pendant le zoom n'est pas garantie fidèle : quittez le zoom avant de capturer.
