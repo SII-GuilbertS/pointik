@@ -258,6 +258,58 @@ public class DrawingBoardTests
     private static readonly Graphics.ArgbColor Red = Graphics.ArgbColor.Parse("#E52B2B");
 
     [Fact]
+    public void Numbers_count_up_and_restart_after_erase_or_clear()
+    {
+        var board = new Drawing.DrawingBoard();
+        Assert.Equal(1, board.PlaceNumber(Red, 6, new ScreenPoint(100, 100)).Number);
+        Assert.Equal(2, board.PlaceNumber(Red, 6, new ScreenPoint(200, 100)).Number);
+        var third = board.PlaceNumber(Red, 6, new ScreenPoint(300, 100));
+        Assert.Equal(3, third.Number);
+
+        // Gommer le dernier : le suivant reprend son numéro.
+        board.BeginErase(new ScreenPoint(300, 100));
+        Assert.Equal(1, board.EndErase());
+        Assert.Equal(3, board.NextNumber);
+
+        // Annuler la gomme le fait revenir ; tout effacer repart de 1.
+        Assert.True(board.Undo());
+        Assert.Equal(4, board.NextNumber);
+        board.Clear();
+        Assert.Equal(1, board.NextNumber);
+    }
+
+    [Fact]
+    public void Number_hit_covers_the_whole_disc()
+    {
+        var board = new Drawing.DrawingBoard();
+        var n = board.PlaceNumber(Red, 6, new ScreenPoint(100, 100));
+        Assert.Equal(Drawing.DrawingBoard.NumberRadiusFor(6), n.NumberRadius);
+        Assert.True(Drawing.DrawingBoard.Hits(n, new ScreenPoint(100, 100), 0));
+        Assert.True(Drawing.DrawingBoard.Hits(n, new ScreenPoint(100 + n.NumberRadius, 100), 0));
+        Assert.False(Drawing.DrawingBoard.Hits(n, new ScreenPoint(100 + n.NumberRadius + 5, 100), 2));
+    }
+
+    [Fact]
+    public void Filled_zone_is_erased_from_inside_and_line_snaps_to_45_degrees()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.Begin(Drawing.DrawingTool.FilledRectangle, Red, 6, new ScreenPoint(0, 0));
+        Assert.True(board.End(new ScreenPoint(200, 100), constrain: false));
+        Assert.True(Drawing.DrawingBoard.Hits(board.Shapes[0], new ScreenPoint(100, 50), 0)); // au centre
+
+        board.Begin(Drawing.DrawingTool.Line, Red, 6, new ScreenPoint(0, 300));
+        Assert.True(board.End(new ScreenPoint(100, 290), constrain: true));
+        var line = board.Shapes[1];
+        Assert.Equal(300, line.End.Y, 6); // ramenée à l'horizontale
+        Assert.True(Drawing.DrawingBoard.Hits(line, new ScreenPoint(50, 302), 2));
+        Assert.False(Drawing.DrawingBoard.Hits(line, new ScreenPoint(50, 320), 2));
+
+        // Un simple clic avec l'outil Ligne ne laisse rien.
+        board.Begin(Drawing.DrawingTool.Line, Red, 6, new ScreenPoint(500, 500));
+        Assert.False(board.End(new ScreenPoint(502, 501), constrain: false));
+    }
+
+    [Fact]
     public void Rectangle_is_normalized_whatever_the_drag_direction()
     {
         var board = new Drawing.DrawingBoard();

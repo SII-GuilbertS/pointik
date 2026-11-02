@@ -10,12 +10,13 @@ using Pointik.Core.Graphics;
 
 namespace Pointik.UI.Drawing;
 
-/// <summary>Surface où l'on dessine à la souris : formes, surligneur, texte et gomme.</summary>
+/// <summary>Surface où l'on dessine à la souris : formes, zones, numéros, surligneur, texte et gomme.</summary>
 public sealed class DrawingCanvas : Control
 {
     // Fond presque invisible (alpha 1/255) : la fenêtre reçoit les clics partout sans masquer l'écran.
     private static readonly IBrush CatchAllBackground = new SolidColorBrush(Avalonia.Media.Color.FromArgb(1, 0, 0, 0));
     private static readonly Typeface TextTypeface = new(FontFamily.Default, FontStyle.Normal, FontWeight.SemiBold);
+    private static readonly Typeface NumberTypeface = new(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
     private static readonly IPen EditFramePen = new Pen(new SolidColorBrush(Avalonia.Media.Color.FromArgb(170, 255, 255, 255)), 1, new DashStyle([4, 3], 0));
     private static readonly IPen EraserPen = new Pen(new SolidColorBrush(Avalonia.Media.Color.FromArgb(220, 255, 255, 255)), 1.5);
     private static readonly IPen EraserShadowPen = new Pen(new SolidColorBrush(Avalonia.Media.Color.FromArgb(160, 0, 0, 0)), 3.5);
@@ -90,6 +91,11 @@ public sealed class DrawingCanvas : Control
             case DrawingTool.Eraser:
                 Board.BeginErase(p);
                 break;
+            case DrawingTool.Number:
+                // Un clic suffit : la pastille est posée tout de suite.
+                Board.PlaceNumber(Color, Thickness, p);
+                InvalidateVisual();
+                return;
             default:
                 Board.Begin(Tool, Color, Thickness, p);
                 break;
@@ -312,6 +318,20 @@ public sealed class DrawingCanvas : Control
                 ctx.DrawEllipse(null, pen, new Point(r.Center.X, r.Center.Y), r.Width / 2, r.Height / 2);
                 break;
             }
+            case DrawingTool.FilledRectangle:
+            {
+                var r = a.Bounds;
+                var rect = new Rect(r.X, r.Y, r.Width, r.Height);
+                // Remplissage léger et liseré fin de la même couleur : on voit encore ce qu'il y a dessous.
+                ctx.DrawRectangle(ToBrush(a.Color, DrawingBoard.FillOpacity), new Pen(brush, 2), rect, 3, 3);
+                break;
+            }
+            case DrawingTool.Line:
+                ctx.DrawLine(pen, ToAvalonia(a.Start), ToAvalonia(a.End));
+                break;
+            case DrawingTool.Number:
+                DrawNumber(ctx, a);
+                break;
             case DrawingTool.Arrow:
             {
                 var arrow = ArrowShape.Compute(a.Start, a.End, a.Thickness);
@@ -350,7 +370,28 @@ public sealed class DrawingCanvas : Control
         }
     }
 
+    /// <summary>Pastille d'étape : disque plein, liseré contrasté et numéro centré.</summary>
+    private static void DrawNumber(DrawingContext ctx, Annotation a)
+    {
+        var c = a.Color;
+        var radius = a.NumberRadius;
+        var center = ToAvalonia(a.Start);
+        var light = (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255 > 0.55;
+        var ink = light ? Brushes.Black : Brushes.White;
+        // Ombre douce puis liseré blanc ou noir : la pastille se détache de n'importe quel fond.
+        ctx.DrawEllipse(new SolidColorBrush(Colors.Black, 0.25), null, center + new Point(0, 2), radius + 2, radius + 2);
+        ctx.DrawEllipse(ToBrush(a.Color), new Pen(light ? new SolidColorBrush(Colors.Black, 0.55) : Brushes.White, Math.Max(2, radius / 9)), center, radius, radius);
+
+        var label = a.Number.ToString(CultureInfo.CurrentCulture);
+        var fontSize = radius * (label.Length >= 3 ? 0.8 : label.Length == 2 ? 1.0 : 1.2);
+        var text = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, NumberTypeface, fontSize, ink);
+        ctx.DrawText(text, new Point(center.X - text.Width / 2, center.Y - text.Height / 2));
+    }
+
     private static IBrush ToBrush(ArgbColor c) => new SolidColorBrush(Avalonia.Media.Color.FromArgb(c.A, c.R, c.G, c.B));
+
+    private static IBrush ToBrush(ArgbColor c, double opacity) =>
+        new SolidColorBrush(Avalonia.Media.Color.FromArgb(255, c.R, c.G, c.B), c.Opacity * opacity);
 
     private static ScreenPoint ToPoint(Point p) => new(p.X, p.Y);
 

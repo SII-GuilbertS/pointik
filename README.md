@@ -59,8 +59,9 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Action | Souris ou touche |
 |---|---|
 | Tracer | Glisser avec le bouton gauche |
-| Cadre / Ovale / Flèche / Main levée / Surligneur | Boutons de la barre, ou **C** / **O** / **F** / **L** / **S** |
-| Carré, cercle, flèche à 45°, surlignage droit | Maintenir **Maj** pendant le tracé |
+| Cadre / Ovale / Zone / Ligne / Flèche / Main levée / Surligneur | Boutons de la barre, ou **C** / **O** / **R** / **D** / **F** / **L** / **S** |
+| Carré, cercle, ligne ou flèche à 45°, surlignage droit | Maintenir **Maj** pendant le tracé |
+| Numéro d'étape | **N**, puis un clic par étape : ①, ②, ③… |
 | Texte | **T**, puis cliquer et taper. **Entrée** : nouvelle ligne ; **Ctrl + V** : coller ; **Échap**, **Ctrl + Entrée** ou clic ailleurs : valider |
 | Gomme | **G**, puis cliquer ou glisser sur les formes à effacer |
 | Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre (l'épaisseur règle aussi la taille du texte) |
@@ -70,6 +71,8 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Quitter (les dessins sont masqués, pas effacés) | **Échap**, ou Ctrl + Alt + D |
 
 - **Surligneur :** trait large et semi-transparent, dans la couleur choisie (le jaune est idéal pour du texte).
+- **Zone :** rectangle plein semi-transparent avec un liseré, pour mettre en valeur un bloc entier (on voit encore ce qu'il y a dessous). La gomme l'efface en touchant n'importe où à l'intérieur.
+- **Numéro d'étape :** chaque clic pose une pastille numérotée, dans la couleur choisie ; l'épaisseur règle sa taille. Le numéro suivant est toujours un de plus que le plus grand affiché : gommer la dernière pastille ou tout effacer fait reprendre la numérotation.
 - **Texte :** chaque lettre est entourée d'un léger halo contrasté, pour rester lisible sur n'importe quel fond. Pendant la saisie, le clavier sert à écrire : les raccourcis d'outils sont suspendus, et changer de couleur ou d'épaisseur s'applique au texte en cours.
 - **Gomme :** un cercle montre la zone effacée. Seul le trait compte : cliquer au milieu d'un cadre vide ne l'efface pas. Un geste de gomme s'annule en une fois.
 - **Capture d'écran :** l'écran du dessin est capturé à sa résolution réelle, avec les annotations, mais **sans** la barre d'outils, l'anneau, le spot ni les bulles du clavier. L'image est enregistrée en PNG dans **Images\Pointik** (« Pointik 2026-11-01 21-03-05.png ») et copiée dans le presse-papiers, prête à coller dans un document ou une présentation. Un bref éclair blanc et une notification confirment la capture. La touche Impr. écran n'arrive à Pointik que si Windows ne la réserve pas à l'Outil Capture d'écran (réglage *Accessibilité → Clavier* de Windows 11).

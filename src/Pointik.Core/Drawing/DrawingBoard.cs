@@ -20,6 +20,12 @@ public enum DrawingTool
     Text,
     /// <summary>Gomme : efface les formes touchées.</summary>
     Eraser,
+    /// <summary>Ligne droite (angle multiple de 45° avec Maj).</summary>
+    Line,
+    /// <summary>Zone : rectangle plein semi-transparent (carré avec Maj).</summary>
+    FilledRectangle,
+    /// <summary>Numéro d'étape : pastille numérotée posée d'un clic (1, 2, 3…).</summary>
+    Number,
 }
 
 /// <summary>Géométrie d'une flèche : pointe pleine proportionnelle à l'épaisseur du trait.</summary>
@@ -80,6 +86,12 @@ public sealed class Annotation
     /// <summary>Points de la ligne libre ou du surligneur (vide de sens pour les autres formes).</summary>
     public IReadOnlyList<ScreenPoint> Points => _points;
 
+    /// <summary>Numéro affiché par une pastille d'étape (outil Numéro).</summary>
+    public int Number { get; internal set; }
+
+    /// <summary>Rayon de la pastille d'étape (outil Numéro).</summary>
+    public double NumberRadius => DrawingBoard.NumberRadiusFor(Thickness);
+
     /// <summary>Texte saisi (outil Texte ; lignes séparées par « \n »).</summary>
     public string Text { get; internal set; } = "";
 
@@ -90,10 +102,13 @@ public sealed class Annotation
     public double TextWidth { get; internal set; }
     public double TextHeight { get; internal set; }
 
-    /// <summary>Rectangle englobant du cadre, de l'ovale ou du texte, toujours de largeur et hauteur positives.</summary>
-    public ScreenRect Bounds => Tool == DrawingTool.Text
-        ? new ScreenRect(Start.X, Start.Y, TextWidth, TextHeight)
-        : DrawingBoard.NormalizedRect(Start, End);
+    /// <summary>Rectangle englobant du cadre, de l'ovale, du texte ou de la pastille, toujours de largeur et hauteur positives.</summary>
+    public ScreenRect Bounds => Tool switch
+    {
+        DrawingTool.Text => new ScreenRect(Start.X, Start.Y, TextWidth, TextHeight),
+        DrawingTool.Number => new ScreenRect(Start.X - NumberRadius, Start.Y - NumberRadius, 2 * NumberRadius, 2 * NumberRadius),
+        _ => DrawingBoard.NormalizedRect(Start, End),
+    };
 
     internal void AddPoint(ScreenPoint p) => _points.Add(p);
 
@@ -127,6 +142,9 @@ public sealed class DrawingBoard
     /// <summary>Opacité du surligneur.</summary>
     public const double HighlighterOpacity = 0.4;
 
+    /// <summary>Opacité du remplissage d'une zone (rectangle plein).</summary>
+    public const double FillOpacity = 0.3;
+
     private readonly List<Annotation> _shapes = new();
     private readonly Stack<Edit> _undo = new();
     private readonly Stack<Edit> _redo = new();
@@ -155,6 +173,35 @@ public sealed class DrawingBoard
 
     /// <summary>Taille de police du texte pour une épaisseur choisie.</summary>
     public static double FontSizeFor(double thickness) => 14 + 2 * Math.Clamp(thickness, 1, 40);
+
+    /// <summary>Rayon d'une pastille d'étape pour une épaisseur choisie (16,5 px en fin, 30 px en épais).</summary>
+    public static double NumberRadiusFor(double thickness) => 12 + 1.5 * Math.Clamp(thickness, 1, 40);
+
+    /// <summary>
+    /// Numéro de la prochaine pastille : un de plus que le plus grand présent. Après « Tout effacer »
+    /// ou si l'on gomme la dernière, la numérotation reprend naturellement.
+    /// </summary>
+    public int NextNumber
+    {
+        get
+        {
+            var max = 0;
+            foreach (var s in _shapes)
+                if (s.Tool == DrawingTool.Number && s.Number > max) max = s.Number;
+            return max + 1;
+        }
+    }
+
+    // ------------------------------------------------------------------ Pastilles d'étape
+
+    /// <summary>Pose une pastille numérotée centrée sur le point (annulable). Retourne la pastille.</summary>
+    public Annotation PlaceNumber(ArgbColor color, double thickness, ScreenPoint center)
+    {
+        Current = null;
+        var a = new Annotation(DrawingTool.Number, color, Math.Clamp(thickness, 1, 40), center) { Number = NextNumber };
+        Commit(a);
+        return a;
+    }
 
     // ------------------------------------------------------------------ Formes tracées
 
@@ -187,7 +234,7 @@ public sealed class DrawingBoard
                 return;
         }
         c.End = !constrain ? p
-            : c.Tool == DrawingTool.Arrow ? SnapAngle(c.Start, p)
+            : c.Tool is DrawingTool.Arrow or DrawingTool.Line ? SnapAngle(c.Start, p)
             : Constrain(c.Start, p);
     }
 
@@ -201,7 +248,7 @@ public sealed class DrawingBoard
         var keep = c.Tool switch
         {
             DrawingTool.Freehand or DrawingTool.Highlighter => c.Points.Count >= 2 || c.Start.DistanceTo(c.End) > 0,
-            DrawingTool.Arrow => c.Start.DistanceTo(c.End) >= MinArrowLength,
+            DrawingTool.Arrow or DrawingTool.Line => c.Start.DistanceTo(c.End) >= MinArrowLength,
             _ => c.Bounds.Width >= MinShapeSize || c.Bounds.Height >= MinShapeSize,
         };
         if (keep) Commit(c);
@@ -319,6 +366,15 @@ public sealed class DrawingBoard
             }
             case DrawingTool.Rectangle:
                 return DistanceToRectOutline(a.Bounds, p) <= reach;
+            case DrawingTool.FilledRectangle:
+            {
+                // Zone pleine : on l'efface en touchant n'importe où dedans.
+                var r = a.Bounds;
+                return p.X >= r.X - tolerance && p.X <= r.Right + tolerance
+                    && p.Y >= r.Y - tolerance && p.Y <= r.Bottom + tolerance;
+            }
+            case DrawingTool.Number:
+                return p.DistanceTo(a.Start) <= a.NumberRadius + tolerance;
             case DrawingTool.Ellipse:
             {
                 var r = a.Bounds;
@@ -331,7 +387,7 @@ public sealed class DrawingBoard
                 var t = Math.Atan2((p.Y - cy) * rx, (p.X - cx) * ry);
                 return p.DistanceTo(new ScreenPoint(cx + rx * Math.Cos(t), cy + ry * Math.Sin(t))) <= reach;
             }
-            case DrawingTool.Arrow:
+            case DrawingTool.Arrow or DrawingTool.Line:
                 return DistanceToSegment(p, a.Start, a.End) <= reach;
             default:
             {

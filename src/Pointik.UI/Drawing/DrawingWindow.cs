@@ -17,7 +17,8 @@ namespace Pointik.UI.Drawing;
 
 /// <summary>
 /// Mode dessin : une fenêtre transparente couvre l'écran du curseur et capte la souris.
-/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, F flèche, L ligne libre, S surligneur, T texte,
+/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, R zone, D ligne droite, F flèche, L ligne libre,
+/// S surligneur, N numéro, T texte,
 /// G gomme, Maj = carré/cercle/45°/ligne droite, Ctrl+Z annuler, Ctrl+Y rétablir, Suppr tout effacer,
 /// Ctrl+S capture d'écran avec les annotations, Échap quitter (les dessins sont masqués, pas effacés :
 /// la planche appartient à l'appelant et se retrouve à la réouverture ; avec « Laisser affiché »,
@@ -132,9 +133,12 @@ public sealed class DrawingWindow : Window
 
         AddTool(bar, DrawingTool.Rectangle, "▭  Cadre", "Cadre (C) — Maj : carré");
         AddTool(bar, DrawingTool.Ellipse, "◯  Ovale", "Ovale (O) — Maj : cercle");
+        AddTool(bar, DrawingTool.FilledRectangle, "▆  Zone", "Zone : rectangle plein semi-transparent (R) — Maj : carré");
+        AddTool(bar, DrawingTool.Line, "╱  Ligne", "Ligne droite (D) — Maj : angle de 45°");
         AddTool(bar, DrawingTool.Arrow, "➜  Flèche", "Flèche (F) — Maj : angle de 45°");
         AddTool(bar, DrawingTool.Freehand, "✎  Main levée", "Ligne libre (L)");
         AddTool(bar, DrawingTool.Highlighter, "▬  Surligneur", "Surligneur (S) — Maj : ligne droite");
+        AddTool(bar, DrawingTool.Number, "①  Numéro", "Numéro d'étape (N) — chaque clic pose le numéro suivant : 1, 2, 3…");
         AddTool(bar, DrawingTool.Text, "T  Texte", "Texte (T) — cliquer puis taper ; Entrée : nouvelle ligne ; Échap ou clic ailleurs : valider");
         AddTool(bar, DrawingTool.Eraser, "⌫  Gomme", "Gomme (G) — cliquer ou glisser sur les formes à effacer");
         bar.Children.Add(Separator());
@@ -479,6 +483,15 @@ public sealed class DrawingWindow : Window
                 break;
             case Key.L when !ctrl:
                 SetTool(DrawingTool.Freehand);
+                break;
+            case Key.D when !ctrl:
+                SetTool(DrawingTool.Line);
+                break;
+            case Key.R when !ctrl:
+                SetTool(DrawingTool.FilledRectangle);
+                break;
+            case Key.N when !ctrl:
+                SetTool(DrawingTool.Number);
                 break;
             default:
                 return false;
