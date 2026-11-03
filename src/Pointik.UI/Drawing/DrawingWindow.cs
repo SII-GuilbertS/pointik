@@ -139,7 +139,7 @@ public sealed class DrawingWindow : Window
         AddTool(bar, DrawingTool.Freehand, "✎  Main levée", "Ligne libre (L)");
         AddTool(bar, DrawingTool.Highlighter, "▬  Surligneur", "Surligneur (S) — Maj : ligne droite");
         AddTool(bar, DrawingTool.Number, "①  Numéro", "Numéro d'étape (N) — chaque clic pose le numéro suivant : 1, 2, 3…");
-        AddTool(bar, DrawingTool.Text, "T  Texte", "Texte (T) — cliquer puis taper ; Entrée : nouvelle ligne ; Échap ou clic ailleurs : valider");
+        AddTool(bar, DrawingTool.Text, "T  Texte", "Texte (T) — cliquer puis taper, ou cliquer sur un texte pour le modifier ; Entrée : nouvelle ligne ; Échap ou clic ailleurs : valider");
         AddTool(bar, DrawingTool.Eraser, "⌫  Gomme", "Gomme (G) — cliquer ou glisser sur les formes à effacer");
         bar.Children.Add(Separator());
 

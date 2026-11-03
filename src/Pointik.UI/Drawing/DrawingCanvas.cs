@@ -83,6 +83,13 @@ public sealed class DrawingCanvas : Control
         switch (Tool)
         {
             case DrawingTool.Text:
+                // Un clic sur un texte existant le rouvre pour le modifier.
+                if (Board.TextAt(p) is { } existing)
+                {
+                    Board.ReopenText(existing);
+                    RestartCaret();
+                    return;
+                }
                 // Le clic désigne le coin haut gauche ; on remonte d'un demi-interligne pour que le texte
                 // apparaisse centré sur le pointeur.
                 Board.BeginText(Color, Thickness, new ScreenPoint(p.X, p.Y - LineHeight(DrawingBoard.FontSizeFor(Thickness)) / 2));

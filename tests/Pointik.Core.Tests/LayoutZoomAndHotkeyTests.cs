@@ -493,6 +493,72 @@ public class DrawingBoardTests
     }
 
     [Fact]
+    public void Clicked_text_is_reopened_edited_and_the_change_can_be_undone()
+    {
+        var board = new Drawing.DrawingBoard();
+        (double, double) Measure(Drawing.Annotation a) => (a.Text.Length * 10.0, 30);
+        board.Begin(Drawing.DrawingTool.Rectangle, Red, 4, new ScreenPoint(200, 200));
+        board.End(new ScreenPoint(260, 260), false);
+        board.BeginText(Red, 6, new ScreenPoint(10, 20));
+        board.TypeText("Bonjour");
+        board.EndText(Measure);
+        var original = board.Shapes[1];
+
+        Assert.Null(board.TextAt(new ScreenPoint(500, 500)));
+        Assert.Same(original, board.TextAt(new ScreenPoint(40, 30)));
+
+        // Modification : le texte quitte la planche pendant la saisie puis reprend sa place.
+        Assert.True(board.ReopenText(original));
+        Assert.True(board.IsReopenedText);
+        Assert.Single(board.Shapes);
+        Assert.Equal("Bonjour", board.Current!.Text);
+        board.DeleteLastChar();
+        board.TypeText("ne nuit");
+        Assert.True(board.EndText(Measure));
+        Assert.Equal(2, board.Shapes.Count);
+        Assert.Equal("Bonjoune nuit", board.Shapes[1].Text);
+        Assert.Equal(new ScreenPoint(10, 20), board.Shapes[1].Start);
+        Assert.Equal(130, board.Shapes[1].TextWidth);
+
+        Assert.True(board.Undo());
+        Assert.Same(original, board.Shapes[1]);
+        Assert.True(board.Redo());
+        Assert.Equal("Bonjoune nuit", board.Shapes[1].Text);
+
+        // Abandon (Échap, Ctrl + Z) : le texte d'origine revient, sans étape d'annulation.
+        var edited = board.Shapes[1];
+        board.ReopenText(edited);
+        board.TypeText(" !!!");
+        board.Cancel();
+        Assert.Same(edited, board.Shapes[1]);
+        Assert.False(board.IsReopenedText);
+
+        // Validé sans changement : aucune étape d'annulation ajoutée.
+        board.ReopenText(edited);
+        board.EndText(Measure);
+        Assert.Same(edited, board.Shapes[1]);
+        Assert.True(board.Undo());
+        Assert.Same(original, board.Shapes[1]);
+        board.Redo();
+
+        // Vidé : le texte est supprimé, et Ctrl + Z le fait revenir.
+        board.ReopenText(edited);
+        while (board.Current!.Text.Length > 0) board.DeleteLastChar();
+        Assert.False(board.EndText(Measure));
+        Assert.Single(board.Shapes);
+        Assert.True(board.Undo());
+        Assert.Same(edited, board.Shapes[1]);
+
+        // Tout effacer pendant une modification n'égare pas le texte : Ctrl + Z rend les deux formes.
+        board.ReopenText(edited);
+        Assert.True(board.Clear());
+        Assert.Empty(board.Shapes);
+        Assert.True(board.Undo());
+        Assert.Equal(2, board.Shapes.Count);
+        Assert.Same(edited, board.Shapes[1]);
+    }
+
+    [Fact]
     public void Drawing_hotkey_has_a_conflict_free_default()
     {
         var h = new HotkeySettings();

@@ -149,6 +149,7 @@ public sealed class DrawingBoard
     private readonly Stack<Edit> _undo = new();
     private readonly Stack<Edit> _redo = new();
     private List<(int Index, Annotation Shape)>? _erased;
+    private (int Index, Annotation Shape)? _reopened;
     private ScreenPoint _eraserLast;
 
     /// <summary>Formes terminées, de la plus ancienne à la plus récente.</summary>
@@ -197,7 +198,7 @@ public sealed class DrawingBoard
     /// <summary>Pose une pastille numérotée centrée sur le point (annulable). Retourne la pastille.</summary>
     public Annotation PlaceNumber(ArgbColor color, double thickness, ScreenPoint center)
     {
-        Current = null;
+        Cancel();
         var a = new Annotation(DrawingTool.Number, color, Math.Clamp(thickness, 1, 40), center) { Number = NextNumber };
         Commit(a);
         return a;
@@ -208,6 +209,7 @@ public sealed class DrawingBoard
     /// <summary>Commence une forme au point donné (cadre, ovale, flèche, ligne libre, surligneur).</summary>
     public void Begin(DrawingTool tool, ArgbColor color, double thickness, ScreenPoint p)
     {
+        Cancel();
         thickness = Math.Clamp(thickness, 1, 40);
         if (tool == DrawingTool.Highlighter)
         {
@@ -255,14 +257,54 @@ public sealed class DrawingBoard
         return keep;
     }
 
-    /// <summary>Abandonne la forme ou le texte en cours (Échap pendant un tracé).</summary>
-    public void Cancel() => Current = null;
+    /// <summary>
+    /// Abandonne la forme ou le texte en cours (Échap pendant un tracé). Un texte rouvert pour
+    /// modification retrouve sa place, inchangé.
+    /// </summary>
+    public void Cancel()
+    {
+        Current = null;
+        if (_reopened is not { } r) return;
+        _reopened = null;
+        _shapes.Insert(r.Index, r.Shape);
+    }
 
     // ------------------------------------------------------------------ Texte
 
     /// <summary>Commence la saisie d'un texte dont le coin haut gauche est <paramref name="topLeft"/>.</summary>
-    public void BeginText(ArgbColor color, double thickness, ScreenPoint topLeft) =>
+    public void BeginText(ArgbColor color, double thickness, ScreenPoint topLeft)
+    {
+        Cancel();
         Current = new Annotation(DrawingTool.Text, color, Math.Clamp(thickness, 1, 40), topLeft);
+    }
+
+    /// <summary>Texte terminé situé sous le point (le plus récent s'ils se chevauchent), ou null.</summary>
+    public Annotation? TextAt(ScreenPoint p, double tolerance = 4)
+    {
+        for (var i = _shapes.Count - 1; i >= 0; i--)
+            if (_shapes[i].Tool == DrawingTool.Text && Hits(_shapes[i], p, tolerance)) return _shapes[i];
+        return null;
+    }
+
+    /// <summary>
+    /// Rouvre un texte terminé pour le modifier : il quitte la planche le temps de la saisie, qui reprend
+    /// en fin de texte avec sa couleur et sa taille. Valider enregistre la modification (annulable) ;
+    /// l'abandonner remet le texte d'origine. Retourne false si la forme n'est pas un texte de la planche.
+    /// </summary>
+    public bool ReopenText(Annotation text)
+    {
+        if (text.Tool != DrawingTool.Text) return false;
+        Cancel();
+        var index = _shapes.IndexOf(text);
+        if (index < 0) return false;
+        _shapes.RemoveAt(index);
+        _reopened = (index, text);
+        Current = new Annotation(DrawingTool.Text, text.Color, text.Thickness, text.Start) { Text = text.Text };
+        return true;
+    }
+
+    /// <summary>Un texte existant est en cours de modification.</summary>
+    public bool IsReopenedText => _reopened is not null;
 
     /// <summary>Ajoute du texte saisi ou collé (retours à la ligne normalisés, caractères de contrôle ignorés).</summary>
     public void TypeText(string text)
@@ -301,7 +343,27 @@ public sealed class DrawingBoard
         var c = Current;
         if (c is null || c.Tool != DrawingTool.Text) return false;
         Current = null;
+        var reopened = _reopened;
+        _reopened = null;
         c.Text = c.Text.TrimEnd();
+        if (reopened is { } r)
+        {
+            // Texte modifié : vidé, il est supprimé ; inchangé, il reprend sa place sans étape d'annulation.
+            if (c.Text.Length == 0)
+            {
+                Push(new RemoveEdit(new List<(int, Annotation)> { r }));
+                return false;
+            }
+            if (c.Text == r.Shape.Text && c.Color == r.Shape.Color && c.Thickness == r.Shape.Thickness)
+            {
+                _shapes.Insert(r.Index, r.Shape);
+                return true;
+            }
+            (c.TextWidth, c.TextHeight) = measure(c);
+            _shapes.Insert(r.Index, c);
+            Push(new ReplaceEdit(r.Index, r.Shape, c));
+            return true;
+        }
         if (c.Text.Length == 0) return false;
         (c.TextWidth, c.TextHeight) = measure(c);
         Commit(c);
@@ -445,7 +507,7 @@ public sealed class DrawingBoard
     /// <summary>Efface tout (annulable). Retourne false s'il n'y avait rien à effacer.</summary>
     public bool Clear()
     {
-        Current = null;
+        Cancel();
         if (_shapes.Count == 0) return false;
         var removed = new List<(int, Annotation)>();
         for (var i = _shapes.Count - 1; i >= 0; i--) removed.Add((i, _shapes[i]));
@@ -478,6 +540,9 @@ public sealed class DrawingBoard
                 // Les index ont été relevés au moment de chaque suppression, dans l'ordre.
                 foreach (var (index, _) in remove.Removed) _shapes.RemoveAt(index);
                 break;
+            case ReplaceEdit replace:
+                _shapes[replace.Index] = replace.After;
+                break;
         }
     }
 
@@ -493,12 +558,16 @@ public sealed class DrawingBoard
                 for (var i = remove.Removed.Count - 1; i >= 0; i--)
                     _shapes.Insert(remove.Removed[i].Index, remove.Removed[i].Shape);
                 break;
+            case ReplaceEdit replace:
+                _shapes[replace.Index] = replace.Before;
+                break;
         }
     }
 
     private abstract record Edit;
     private sealed record AddEdit(Annotation Shape) : Edit;
     private sealed record RemoveEdit(List<(int Index, Annotation Shape)> Removed) : Edit;
+    private sealed record ReplaceEdit(int Index, Annotation Before, Annotation After) : Edit;
 
     // ------------------------------------------------------------------ Géométrie
 
