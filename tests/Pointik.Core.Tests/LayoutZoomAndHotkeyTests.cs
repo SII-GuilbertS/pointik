@@ -474,7 +474,7 @@ public class DrawingBoardTests
         board.TypeText("\r");      // Entrée relayée comme caractère : ignorée
         board.TypeText("\u0008");  // Retour arrière relayé comme caractère : ignoré
         board.TypeText("😀");
-        board.DeleteLastChar();     // l'émoji (deux unités UTF-16) part d'un coup
+        board.DeleteBackward();     // l'émoji (deux unités UTF-16) part d'un coup
         board.TypeText("\n\n  ");
         board.RestyleText(Red, 12);
 
@@ -512,7 +512,7 @@ public class DrawingBoardTests
         Assert.True(board.IsReopenedText);
         Assert.Single(board.Shapes);
         Assert.Equal("Bonjour", board.Current!.Text);
-        board.DeleteLastChar();
+        board.DeleteBackward();
         board.TypeText("ne nuit");
         Assert.True(board.EndText(Measure));
         Assert.Equal(2, board.Shapes.Count);
@@ -543,7 +543,7 @@ public class DrawingBoardTests
 
         // Vidé : le texte est supprimé, et Ctrl + Z le fait revenir.
         board.ReopenText(edited);
-        while (board.Current!.Text.Length > 0) board.DeleteLastChar();
+        while (board.Current!.Text.Length > 0) board.DeleteBackward();
         Assert.False(board.EndText(Measure));
         Assert.Single(board.Shapes);
         Assert.True(board.Undo());
@@ -556,6 +556,61 @@ public class DrawingBoardTests
         Assert.True(board.Undo());
         Assert.Equal(2, board.Shapes.Count);
         Assert.Same(edited, board.Shapes[1]);
+    }
+
+    [Fact]
+    public void Text_caret_moves_inserts_and_deletes_in_the_middle()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.BeginText(Red, 6, new ScreenPoint(0, 0));
+        board.TypeText("Bonjour\nà tous");
+        Assert.Equal(14, board.Caret);
+
+        board.CaretToLineStart();
+        Assert.Equal(8, board.Caret);
+        board.TypeText("et ");
+        Assert.Equal("Bonjour\net à tous", board.Current!.Text);
+
+        board.CaretToLineStart(wholeText: true);
+        board.MoveCaret(+1, byWord: true);
+        Assert.Equal(8, board.Caret);             // après « Bonjour\n », au début du mot suivant
+        board.MoveCaret(-1);
+        board.DeleteBackward();                    // efface le « r »
+        board.DeleteForward();                     // efface le retour à la ligne
+        Assert.Equal("Bonjouet à tous", board.Current.Text);
+
+        board.CaretToLineEnd();
+        Assert.Equal(15, board.Caret);
+        board.DeleteForward();                     // rien après le curseur
+        board.MoveCaret(-1, byWord: true);
+        Assert.Equal(11, board.Caret);            // début de « tous »
+
+        // Émoji : le curseur ne s'arrête jamais entre ses deux moitiés.
+        board.TypeText("😀");
+        board.MoveCaret(-1);
+        Assert.Equal(11, board.Caret);
+        board.SetCaret(12);
+        Assert.Equal(11, board.Caret);
+        board.DeleteForward();
+        Assert.Equal("Bonjouet à tous", board.Current.Text);
+
+        Assert.Equal(0, Drawing.DrawingBoard.LineStart("ab\ncd", 2));
+        Assert.Equal(3, Drawing.DrawingBoard.LineStart("ab\ncd", 3));
+        Assert.Equal(2, Drawing.DrawingBoard.LineEnd("ab\ncd", 1));
+        Assert.Equal(5, Drawing.DrawingBoard.LineEnd("ab\ncd", 4));
+    }
+
+    [Fact]
+    public void Reopened_text_can_start_with_the_caret_in_the_middle()
+    {
+        var board = new Drawing.DrawingBoard();
+        board.BeginText(Red, 6, new ScreenPoint(0, 0));
+        board.TypeText("Bjour");
+        board.EndText(a => (50, 30));
+        board.ReopenText(board.Shapes[0], caret: 1);
+        board.TypeText("on");
+        board.EndText(a => (70, 30));
+        Assert.Equal("Bonjour", board.Shapes[0].Text);
     }
 
     [Fact]

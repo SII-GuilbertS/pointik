@@ -77,16 +77,23 @@ public sealed class DrawingCanvas : Control
         base.OnPointerPressed(e);
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         var p = ToPoint(e.GetPosition(this));
+        e.Handled = true;
+        // Un clic dans le texte en cours de saisie y déplace le curseur.
+        if (Board.Current is { Tool: DrawingTool.Text } editing && EditorFrame(editing).Contains(new Point(p.X, p.Y)))
+        {
+            Board.SetCaret(CaretIndexAt(editing, p));
+            RestartCaret();
+            return;
+        }
         // Un clic ailleurs valide le texte en cours.
         CommitText();
-        e.Handled = true;
         switch (Tool)
         {
             case DrawingTool.Text:
-                // Un clic sur un texte existant le rouvre pour le modifier.
+                // Un clic sur un texte existant le rouvre pour le modifier, curseur à l'endroit du clic.
                 if (Board.TextAt(p) is { } existing)
                 {
-                    Board.ReopenText(existing);
+                    Board.ReopenText(existing, CaretIndexAt(existing, p));
                     RestartCaret();
                     return;
                 }
@@ -174,10 +181,45 @@ public sealed class DrawingCanvas : Control
         RestartCaret();
     }
 
-    /// <summary>Efface le dernier caractère du texte en cours.</summary>
-    public void DeleteLastChar()
+    /// <summary>Efface le caractère avant le curseur (Retour arrière).</summary>
+    public void DeleteBackward()
     {
-        Board.DeleteLastChar();
+        Board.DeleteBackward();
+        RestartCaret();
+    }
+
+    /// <summary>Efface le caractère après le curseur (Suppr).</summary>
+    public void DeleteForward()
+    {
+        Board.DeleteForward();
+        RestartCaret();
+    }
+
+    /// <summary>Flèche gauche ou droite (un mot avec <paramref name="byWord"/>).</summary>
+    public void MoveCaret(int direction, bool byWord)
+    {
+        Board.MoveCaret(direction, byWord);
+        RestartCaret();
+    }
+
+    /// <summary>Début ou Fin (du texte entier avec <paramref name="wholeText"/>).</summary>
+    public void CaretToLineEdge(bool end, bool wholeText)
+    {
+        if (end) Board.CaretToLineEnd(wholeText);
+        else Board.CaretToLineStart(wholeText);
+        RestartCaret();
+    }
+
+    /// <summary>Flèche haut ou bas : même position horizontale sur la ligne voisine.</summary>
+    public void MoveCaretLine(int direction)
+    {
+        if (Board.Current is not { Tool: DrawingTool.Text } a) return;
+        var lines = a.Text.Split('\n');
+        var (line, x) = CaretLocation(a, Board.Caret);
+        var target = line + Math.Sign(direction);
+        if (target < 0) Board.CaretToLineStart(wholeText: true);
+        else if (target >= lines.Length) Board.CaretToLineEnd(wholeText: true);
+        else Board.SetCaret(IndexInLine(a, lines, target, x));
         RestartCaret();
     }
 
@@ -216,6 +258,57 @@ public sealed class DrawingCanvas : Control
 
     private static FormattedText CreateText(string text, Annotation a) =>
         new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, TextTypeface, a.FontSize, ToBrush(a.Color));
+
+    /// <summary>Index du texte le plus proche du point (ligne sous le point, puis caractère le plus proche).</summary>
+    private static int CaretIndexAt(Annotation a, ScreenPoint p)
+    {
+        var lines = a.Text.Split('\n');
+        var line = (int)Math.Floor((p.Y - a.Start.Y) / LineHeight(a.FontSize));
+        return IndexInLine(a, lines, Math.Clamp(line, 0, lines.Length - 1), p.X - a.Start.X);
+    }
+
+    /// <summary>Index, dans tout le texte, de la position de la ligne la plus proche de l'abscisse <paramref name="x"/>.</summary>
+    private static int IndexInLine(Annotation a, string[] lines, int line, double x)
+    {
+        var offset = 0;
+        for (var i = 0; i < line; i++) offset += lines[i].Length + 1;
+        var text = lines[line];
+        var best = 0;
+        var bestDistance = Math.Abs(x);
+        for (var k = 1; k <= text.Length; k++)
+        {
+            if (k < text.Length && char.IsLowSurrogate(text[k])) continue;
+            var distance = Math.Abs(PrefixWidth(text[..k], a) - x);
+            if (distance >= bestDistance) continue;
+            best = k;
+            bestDistance = distance;
+        }
+        return offset + best;
+    }
+
+    /// <summary>Ligne du curseur et sa position horizontale depuis le bord gauche du texte.</summary>
+    private static (int Line, double X) CaretLocation(Annotation a, int caret)
+    {
+        var text = a.Text;
+        caret = Math.Clamp(caret, 0, text.Length);
+        var start = DrawingBoard.LineStart(text, caret);
+        var line = 0;
+        for (var i = 0; i < start; i++) if (text[i] == '\n') line++;
+        return (line, PrefixWidth(text[start..caret], a));
+    }
+
+    private static double PrefixWidth(string text, Annotation a) =>
+        text.Length == 0 ? 0 : CreateText(text, a).WidthIncludingTrailingWhitespace;
+
+    /// <summary>Cadre pointillé autour du texte en cours de saisie (zone où un clic déplace le curseur).</summary>
+    private static Rect EditorFrame(Annotation a)
+    {
+        var lineHeight = LineHeight(a.FontSize);
+        var lineCount = a.Text.Split('\n').Length;
+        var width = PrefixWidth(a.Text, a);
+        var height = Math.Max(lineHeight, lineCount * lineHeight);
+        return new Rect(a.Start.X - 6, a.Start.Y - 4, width + 14, height + 8);
+    }
 
     private static double LineHeight(double fontSize) =>
         new FormattedText("Ag", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, TextTypeface, fontSize, Brushes.White).Height;
@@ -274,18 +367,15 @@ public sealed class DrawingCanvas : Control
     private void DrawTextEditor(DrawingContext ctx, Annotation a)
     {
         var lineHeight = LineHeight(a.FontSize);
-        var lines = a.Text.Split('\n');
-        var lastLineWidth = lines[^1].Length == 0 ? 0 : CreateText(lines[^1], a).WidthIncludingTrailingWhitespace;
-        var width = a.Text.Length == 0 ? 0 : CreateText(a.Text, a).WidthIncludingTrailingWhitespace;
-        var height = Math.Max(lineHeight, lines.Length * lineHeight);
         if (a.Text.Length > 0) DrawText(ctx, a);
 
-        // Cadre pointillé autour de la zone de saisie, et curseur clignotant en fin de texte.
-        ctx.DrawRectangle(null, EditFramePen, new Rect(a.Start.X - 6, a.Start.Y - 4, width + 14, height + 8), 4, 4);
+        // Cadre pointillé autour de la zone de saisie, et curseur clignotant à sa position.
+        ctx.DrawRectangle(null, EditFramePen, EditorFrame(a), 4, 4);
         if (_caretVisible)
         {
-            var x = a.Start.X + lastLineWidth + 1;
-            var y = a.Start.Y + (lines.Length - 1) * lineHeight;
+            var (line, caretX) = CaretLocation(a, Board.Caret);
+            var x = a.Start.X + caretX + 1;
+            var y = a.Start.Y + line * lineHeight;
             var caret = new Pen(ToBrush(a.Color), Math.Max(2, a.FontSize / 14));
             ctx.DrawLine(caret, new Point(x, y + lineHeight * 0.1), new Point(x, y + lineHeight * 0.9));
         }

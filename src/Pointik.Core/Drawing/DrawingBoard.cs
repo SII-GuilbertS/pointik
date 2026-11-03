@@ -163,6 +163,9 @@ public sealed class DrawingBoard
     /// <summary>Un texte est en cours de saisie.</summary>
     public bool IsEditingText => Current?.Tool == DrawingTool.Text;
 
+    /// <summary>Position du curseur de saisie dans le texte en cours (index dans <see cref="Annotation.Text"/>).</summary>
+    public int Caret { get; private set; }
+
     /// <summary>La gomme est en cours d'utilisation (bouton enfoncé).</summary>
     public bool IsErasing => _erased is not null;
 
@@ -276,6 +279,7 @@ public sealed class DrawingBoard
     {
         Cancel();
         Current = new Annotation(DrawingTool.Text, color, Math.Clamp(thickness, 1, 40), topLeft);
+        Caret = 0;
     }
 
     /// <summary>Texte terminé situé sous le point (le plus récent s'ils se chevauchent), ou null.</summary>
@@ -289,9 +293,10 @@ public sealed class DrawingBoard
     /// <summary>
     /// Rouvre un texte terminé pour le modifier : il quitte la planche le temps de la saisie, qui reprend
     /// en fin de texte avec sa couleur et sa taille. Valider enregistre la modification (annulable) ;
-    /// l'abandonner remet le texte d'origine. Retourne false si la forme n'est pas un texte de la planche.
+    /// l'abandonner remet le texte d'origine. <paramref name="caret"/> : position du curseur (fin du texte
+    /// si absente). Retourne false si la forme n'est pas un texte de la planche.
     /// </summary>
-    public bool ReopenText(Annotation text)
+    public bool ReopenText(Annotation text, int? caret = null)
     {
         if (text.Tool != DrawingTool.Text) return false;
         Cancel();
@@ -300,6 +305,8 @@ public sealed class DrawingBoard
         _shapes.RemoveAt(index);
         _reopened = (index, text);
         Current = new Annotation(DrawingTool.Text, text.Color, text.Thickness, text.Start) { Text = text.Text };
+        Caret = text.Text.Length;
+        if (caret is { } c) SetCaret(c);
         return true;
     }
 
@@ -313,7 +320,8 @@ public sealed class DrawingBoard
         // Un « \r » isolé (touche Entrée relayée comme caractère) est ignoré : la nouvelle ligne passe par « \n ».
         var normalized = text.Replace("\r\n", "\n").Replace("\r", "").Replace('\t', ' ');
         var kept = new string(normalized.Where(ch => ch == '\n' || !char.IsControl(ch)).ToArray());
-        Current!.Text += kept;
+        Current!.Text = Current.Text.Insert(Caret, kept);
+        Caret += kept.Length;
     }
 
     /// <summary>Change la couleur et la taille du texte en cours de saisie.</summary>
@@ -324,15 +332,87 @@ public sealed class DrawingBoard
         Current.Thickness = Math.Clamp(thickness, 1, 40);
     }
 
-    /// <summary>Efface le dernier caractère saisi (Retour arrière).</summary>
-    public void DeleteLastChar()
+    /// <summary>Efface le caractère avant le curseur (Retour arrière).</summary>
+    public void DeleteBackward()
+    {
+        if (!IsEditingText || Caret == 0) return;
+        var from = PreviousStop(Current!.Text, Caret);
+        Current.Text = Current.Text.Remove(from, Caret - from);
+        Caret = from;
+    }
+
+    /// <summary>Efface le caractère après le curseur (Suppr).</summary>
+    public void DeleteForward()
+    {
+        if (!IsEditingText || Caret >= Current!.Text.Length) return;
+        Current.Text = Current.Text.Remove(Caret, NextStop(Current.Text, Caret) - Caret);
+    }
+
+    /// <summary>Place le curseur (borné au texte, jamais au milieu d'un émoji).</summary>
+    public void SetCaret(int index)
     {
         if (!IsEditingText) return;
         var t = Current!.Text;
-        if (t.Length == 0) return;
-        var cut = t.Length >= 2 && char.IsLowSurrogate(t[^1]) && char.IsHighSurrogate(t[^2]) ? 2 : 1;
-        Current.Text = t[..^cut];
+        index = Math.Clamp(index, 0, t.Length);
+        if (index > 0 && index < t.Length && char.IsLowSurrogate(t[index]) && char.IsHighSurrogate(t[index - 1])) index--;
+        Caret = index;
     }
+
+    /// <summary>Flèche gauche ou droite : un caractère, ou un mot entier avec <paramref name="byWord"/> (Ctrl).</summary>
+    public void MoveCaret(int direction, bool byWord = false)
+    {
+        if (!IsEditingText || direction == 0) return;
+        var t = Current!.Text;
+        if (!byWord)
+        {
+            Caret = direction < 0 ? PreviousStop(t, Caret) : NextStop(t, Caret);
+            return;
+        }
+        var i = Caret;
+        if (direction < 0)
+        {
+            while (i > 0 && !char.IsLetterOrDigit(t[i - 1])) i--;
+            while (i > 0 && char.IsLetterOrDigit(t[i - 1])) i--;
+        }
+        else
+        {
+            while (i < t.Length && char.IsLetterOrDigit(t[i])) i++;
+            while (i < t.Length && !char.IsLetterOrDigit(t[i])) i++;
+        }
+        SetCaret(i);
+    }
+
+    /// <summary>Début : début de la ligne du curseur (du texte avec <paramref name="wholeText"/>).</summary>
+    public void CaretToLineStart(bool wholeText = false)
+    {
+        if (!IsEditingText) return;
+        Caret = wholeText ? 0 : LineStart(Current!.Text, Caret);
+    }
+
+    /// <summary>Fin : fin de la ligne du curseur (du texte avec <paramref name="wholeText"/>).</summary>
+    public void CaretToLineEnd(bool wholeText = false)
+    {
+        if (!IsEditingText) return;
+        var t = Current!.Text;
+        Caret = wholeText ? t.Length : LineEnd(t, Caret);
+    }
+
+    /// <summary>Début de la ligne contenant l'index.</summary>
+    public static int LineStart(string text, int index) =>
+        index <= 0 ? 0 : text.LastIndexOf('\n', Math.Min(index, text.Length) - 1) + 1;
+
+    /// <summary>Fin de la ligne contenant l'index (avant son « \n »).</summary>
+    public static int LineEnd(string text, int index)
+    {
+        var n = text.IndexOf('\n', Math.Clamp(index, 0, text.Length));
+        return n < 0 ? text.Length : n;
+    }
+
+    private static int PreviousStop(string t, int i) =>
+        i >= 2 && char.IsLowSurrogate(t[i - 1]) && char.IsHighSurrogate(t[i - 2]) ? i - 2 : Math.Max(0, i - 1);
+
+    private static int NextStop(string t, int i) =>
+        i + 1 < t.Length && char.IsHighSurrogate(t[i]) && char.IsLowSurrogate(t[i + 1]) ? i + 2 : Math.Min(t.Length, i + 1);
 
     /// <summary>
     /// Termine la saisie. Le texte est débarrassé des espaces et lignes vides finales puis mesuré par

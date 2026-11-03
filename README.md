@@ -62,7 +62,7 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 | Cadre / Ovale / Zone / Ligne / Flèche / Main levée / Surligneur | Boutons de la barre, ou **C** / **O** / **R** / **D** / **F** / **L** / **S** |
 | Carré, cercle, ligne ou flèche à 45°, surlignage droit | Maintenir **Maj** pendant le tracé |
 | Numéro d'étape | **N**, puis un clic par étape : ①, ②, ③… |
-| Texte | **T**, puis cliquer et taper ; cliquer sur un texte déjà écrit pour le modifier. **Entrée** : nouvelle ligne ; **Ctrl + V** : coller ; **Échap**, **Ctrl + Entrée** ou clic ailleurs : valider |
+| Texte | **T**, puis cliquer et taper ; cliquer dans un texte déjà écrit pour le modifier à cet endroit. **Flèches**, **Début**, **Fin** : déplacer le curseur (**Ctrl** : par mot, ou tout le texte) ; **Suppr** : effacer après le curseur. **Entrée** : nouvelle ligne ; **Ctrl + V** : coller ; **Échap**, **Ctrl + Entrée** ou clic ailleurs : valider |
 | Gomme | **G**, puis cliquer ou glisser sur les formes à effacer |
 | Couleur et épaisseur | 6 couleurs, 3 épaisseurs dans la barre (l'épaisseur règle aussi la taille du texte) |
 | Annuler / Rétablir | **Ctrl + Z** / **Ctrl + Y** (ou Ctrl + Maj + Z) |

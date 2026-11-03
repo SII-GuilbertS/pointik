@@ -139,7 +139,7 @@ public sealed class DrawingWindow : Window
         AddTool(bar, DrawingTool.Freehand, "✎  Main levée", "Ligne libre (L)");
         AddTool(bar, DrawingTool.Highlighter, "▬  Surligneur", "Surligneur (S) — Maj : ligne droite");
         AddTool(bar, DrawingTool.Number, "①  Numéro", "Numéro d'étape (N) — chaque clic pose le numéro suivant : 1, 2, 3…");
-        AddTool(bar, DrawingTool.Text, "T  Texte", "Texte (T) — cliquer puis taper, ou cliquer sur un texte pour le modifier ; Entrée : nouvelle ligne ; Échap ou clic ailleurs : valider");
+        AddTool(bar, DrawingTool.Text, "T  Texte", "Texte (T) — cliquer puis taper, ou cliquer dans un texte pour le modifier ; flèches : déplacer le curseur ; Entrée : nouvelle ligne ; Échap ou clic ailleurs : valider");
         AddTool(bar, DrawingTool.Eraser, "⌫  Gomme", "Gomme (G) — cliquer ou glisser sur les formes à effacer");
         bar.Children.Add(Separator());
 
@@ -412,7 +412,28 @@ public sealed class DrawingWindow : Window
                 _canvas.TypeText("\n");
                 return true;
             case Key.Back:
-                _canvas.DeleteLastChar();
+                _canvas.DeleteBackward();
+                return true;
+            case Key.Delete:
+                _canvas.DeleteForward();
+                return true;
+            case Key.Left:
+                _canvas.MoveCaret(-1, ctrl);
+                return true;
+            case Key.Right:
+                _canvas.MoveCaret(+1, ctrl);
+                return true;
+            case Key.Up:
+                _canvas.MoveCaretLine(-1);
+                return true;
+            case Key.Down:
+                _canvas.MoveCaretLine(+1);
+                return true;
+            case Key.Home:
+                _canvas.CaretToLineEdge(end: false, wholeText: ctrl);
+                return true;
+            case Key.End:
+                _canvas.CaretToLineEdge(end: true, wholeText: ctrl);
                 return true;
             case Key.V when ctrl:
                 PasteText();
