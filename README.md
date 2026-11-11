@@ -54,7 +54,7 @@ Les raccourcis de Pointik eux-mêmes ne s'affichent pas dans les bulles du clavi
 
 ## Dessin à l'écran
 
-**Ctrl + Alt + D** (ou *Dessiner à l'écran* dans le menu de l'icône) ouvre le mode dessin sur l'écran du curseur. Une barre d'outils apparaît en haut de l'écran.
+**Ctrl + Alt + D** (ou *Dessiner à l'écran* dans le menu de l'icône) ouvre le mode dessin sur l'écran du curseur. Une barre d'outils apparaît en haut de l'écran. Elle se déplace en la faisant glisser par sa poignée **⠿** (ou par son fond) ; sa position est mémorisée, et un double-clic sur la poignée la remet en haut.
 
 | Action | Souris ou touche |
 |---|---|

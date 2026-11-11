@@ -17,7 +17,7 @@ namespace Pointik.UI.Drawing;
 
 /// <summary>
 /// Mode dessin : une fenêtre transparente couvre l'écran du curseur et capte la souris.
-/// Barre d'outils en haut ; raccourcis : C cadre, O ovale, R zone, D ligne droite, F flèche, L ligne libre,
+/// Barre d'outils en haut (déplaçable par sa poignée ou son fond) ; raccourcis : C cadre, O ovale, R zone, D ligne droite, F flèche, L ligne libre,
 /// S surligneur, N numéro, T texte,
 /// G gomme, Maj = carré/cercle/45°/ligne droite, Ctrl+Z annuler, Ctrl+Y rétablir, Suppr tout effacer,
 /// Ctrl+S capture d'écran avec les annotations, Échap quitter (les dessins sont masqués, pas effacés :
@@ -52,6 +52,10 @@ public sealed class DrawingWindow : Window
     private readonly Action<string, Exception> _logError;
     private readonly Action _toggleKeepVisible;
     private Button? _keepVisibleButton;
+    private Border? _toolbar;
+    private readonly TranslateTransform _toolbarOffset = new();
+    private Point? _dragStart;      // position du pointeur au début du glissement (repère de la fenêtre)
+    private Point _dragStartOffset; // décalage de la barre au début du glissement
 
     /// <param name="settingsChanged">Appelé quand l'outil, la couleur ou l'épaisseur change (enregistrement).</param>
     /// <param name="notify">Affiche une notification (titre, message).</param>
@@ -131,6 +135,17 @@ public sealed class DrawingWindow : Window
         // WrapPanel : sur un petit écran, la barre passe sur deux lignes au lieu de déborder.
         var bar = new WrapPanel { Orientation = Orientation.Horizontal };
 
+        // Poignée : glisser pour déplacer la barre (le fond de la barre marche aussi), double-clic pour la replacer.
+        var grip = new TextBlock
+        {
+            Text = "⠿", Foreground = new SolidColorBrush(Color.FromArgb(170, 255, 255, 255)), FontSize = 16,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 4, 0),
+            Background = Brushes.Transparent,
+            Cursor = new Cursor(StandardCursorType.SizeAll),
+        };
+        ToolTip.SetTip(grip, "Glisser pour déplacer la barre — double-clic : la remettre en haut");
+        bar.Children.Add(grip);
+
         AddTool(bar, DrawingTool.Rectangle, "▭  Cadre", "Cadre (C) — Maj : carré");
         AddTool(bar, DrawingTool.Ellipse, "◯  Ovale", "Ovale (O) — Maj : cercle");
         AddTool(bar, DrawingTool.FilledRectangle, "▆  Zone", "Zone : rectangle plein semi-transparent (R) — Maj : carré");
@@ -194,8 +209,11 @@ public sealed class DrawingWindow : Window
         bar.Children.Add(_keepVisibleButton);
         bar.Children.Add(quit);
 
-        return new Border
+        _toolbarOffset.X = _settings.ToolbarOffsetX;
+        _toolbarOffset.Y = _settings.ToolbarOffsetY;
+        _toolbar = new Border
         {
+            RenderTransform = _toolbarOffset,
             Background = BarBackground,
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(8, 6),
@@ -206,6 +224,79 @@ public sealed class DrawingWindow : Window
             Child = bar,
             Cursor = new Cursor(StandardCursorType.Arrow),
         };
+        _toolbar.PointerPressed += OnToolbarPointerPressed;
+        _toolbar.PointerMoved += OnToolbarPointerMoved;
+        _toolbar.PointerReleased += OnToolbarPointerReleased;
+        _toolbar.PointerCaptureLost += (_, _) => EndToolbarDrag();
+        // Une position enregistrée sur un autre écran (plus grand) est ramenée dans celui-ci.
+        _toolbar.SizeChanged += (_, _) => SetToolbarOffset(_toolbarOffset.X, _toolbarOffset.Y);
+        return _toolbar;
+    }
+
+    // ------------------------------------------------------------------ Déplacement de la barre
+
+    private void OnToolbarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Les boutons gèrent leurs propres clics : on n'arrive ici que sur la poignée ou le fond de la barre.
+        if (_toolbar is null || !e.GetCurrentPoint(_toolbar).Properties.IsLeftButtonPressed) return;
+        if (e.ClickCount == 2)
+        {
+            // Double-clic : retour à la place par défaut.
+            SetToolbarOffset(0, 0);
+            SaveToolbarOffset();
+            e.Handled = true;
+            return;
+        }
+        _dragStart = e.GetPosition(this);
+        _dragStartOffset = new Point(_toolbarOffset.X, _toolbarOffset.Y);
+        e.Pointer.Capture(_toolbar);
+        e.Handled = true;
+    }
+
+    private void OnToolbarPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_dragStart is not { } start) return;
+        var delta = e.GetPosition(this) - start;
+        SetToolbarOffset(_dragStartOffset.X + delta.X, _dragStartOffset.Y + delta.Y);
+        e.Handled = true;
+    }
+
+    private void OnToolbarPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_dragStart is null) return;
+        e.Pointer.Capture(null);
+        EndToolbarDrag();
+        e.Handled = true;
+    }
+
+    private void EndToolbarDrag()
+    {
+        if (_dragStart is null) return;
+        _dragStart = null;
+        SaveToolbarOffset();
+        _canvas.Focus();
+    }
+
+    /// <summary>Applique un décalage en gardant la barre entièrement dans la fenêtre.</summary>
+    private void SetToolbarOffset(double x, double y)
+    {
+        if (_toolbar is null) return;
+        var home = _toolbar.Bounds; // place par défaut (la transformation n'entre pas dans la mise en page)
+        if (home.Width > 0 && Bounds.Width > 0)
+        {
+            x = Math.Clamp(x, -home.X, Math.Max(-home.X, Bounds.Width - home.Right));
+            y = Math.Clamp(y, -home.Y, Math.Max(-home.Y, Bounds.Height - home.Bottom));
+        }
+        _toolbarOffset.X = x;
+        _toolbarOffset.Y = y;
+    }
+
+    private void SaveToolbarOffset()
+    {
+        if (_settings.ToolbarOffsetX == _toolbarOffset.X && _settings.ToolbarOffsetY == _toolbarOffset.Y) return;
+        _settings.ToolbarOffsetX = _toolbarOffset.X;
+        _settings.ToolbarOffsetY = _toolbarOffset.Y;
+        _settingsChanged();
     }
 
     private void AddTool(Panel bar, DrawingTool tool, string text, string tip)

@@ -211,10 +211,18 @@ public sealed class DrawingSettings
     /// restent utilisables). Désactivé : quitter le mode dessin masque les dessins.
     /// </summary>
     public bool KeepVisible { get; set; }
+    /// <summary>
+    /// Décalage de la barre d'outils du mode dessin par rapport à sa place par défaut (en haut, centrée),
+    /// en pixels logiques. Ramené dans l'écran à l'ouverture.
+    /// </summary>
+    public double ToolbarOffsetX { get; set; }
+    public double ToolbarOffsetY { get; set; }
 
     internal void Normalize()
     {
         if (!Enum.IsDefined(Tool)) Tool = DrawingTool.Rectangle;
+        if (!double.IsFinite(ToolbarOffsetX)) ToolbarOffsetX = 0;
+        if (!double.IsFinite(ToolbarOffsetY)) ToolbarOffsetY = 0;
         Thickness = Math.Clamp(Thickness, 1, 40);
     }
 }
