@@ -316,6 +316,8 @@ internal static class Native
     // ---------------------------------------------------------------- Événements WinEvent
 
     public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+    public const uint EVENT_SYSTEM_MENUSTART = 0x0004;
+    public const uint EVENT_SYSTEM_MENUPOPUPSTART = 0x0006;
     public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
     public const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
 

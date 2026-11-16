@@ -18,8 +18,14 @@ internal sealed class WindowsOverlayWindowHost : IOverlayWindowHost
         _ui = ui;
         s_foregroundProc ??= OnForegroundChanged;
         // Hook hors contexte sur le thread Win32 : aucune DLL injectée dans les autres processus.
-        thread.Invoke(() => SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0,
-            s_foregroundProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS));
+        thread.Invoke(() =>
+        {
+            // Fenêtre active + ouverture de menus (menu Démarrer, menus d'application, menus contextuels).
+            SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0,
+                s_foregroundProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+            SetWinEventHook(EVENT_SYSTEM_MENUSTART, EVENT_SYSTEM_MENUPOPUPSTART, 0,
+                s_foregroundProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+        });
     }
 
     public event Action? StackingMayHaveChanged;
@@ -33,6 +39,12 @@ internal sealed class WindowsOverlayWindowHost : IOverlayWindowHost
                 Interlocked.Exchange(ref _pending, 0);
                 StackingMayHaveChanged?.Invoke();
             });
+        }
+        // Le menu Démarrer / les menus s'affichent un peu après l'événement : rappels différés
+        // pour repasser au-dessus une fois qu'ils sont visibles.
+        foreach (var delay in new[] { 80, 250, 700 })
+        {
+            _ = Task.Delay(delay).ContinueWith(_ => _ui.Post(() => StackingMayHaveChanged?.Invoke()));
         }
     }
 
